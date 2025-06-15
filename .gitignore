@@ -1,0 +1,5 @@
+*.code-workspace
+.tts/**
+!.tts/objects
+!.tts/objects/Global.lua
+!.tts/objects/Global.xml
