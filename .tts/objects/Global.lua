@@ -1,5 +1,5 @@
 require("game.GameController")
 
 function onLoad()
-    initCommandShipSelect()
+    init()
 end

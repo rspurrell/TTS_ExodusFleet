@@ -1,6 +1,38 @@
 local Utils = require("lib.Utils")
 local factionData = require("game.FactionData")
 local resourceIDs = require("game.ResourceData").ResourceIDs
+local Planets = require("game.Planets")
+
+function init()
+    initCommandShipSelect()
+    initPlanetAdvance()
+end
+
+function initPlanetAdvance()
+    local centralBoard = getObjectFromGUID("c20ddb")
+    if centralBoard then
+        centralBoard.createButton({
+            label = "Advance Planets »",
+            click_function = "advancePlanets",
+            function_owner = Global,
+            position = {1.99, 0.01, -0.55},
+            rotation = {0, 0, 0},
+            width = 2100,
+            height = 1000,
+            scale = { 0.1, 1, 0.1 },
+            font_size = 250,
+            color = {0.176, 0.412, 0.176},
+            font_color = {1, 1, 1},
+            tooltip = "Advance all planet cards"
+        })
+    else
+        print("ERROR: Central board not found.")
+    end
+end
+
+function advancePlanets(obj, player_color)
+    Planets.advance()
+end
 
 function initCommandShipSelect()
     for faction, data in pairs(factionData) do
