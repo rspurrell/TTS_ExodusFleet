@@ -1,4 +1,5 @@
 local factionData = require("game.FactionData")
+local resourceIDs = require("game.ResourceData")
 
 function initCommandShipSelect()
     for faction, data in pairs(factionData) do
@@ -62,7 +63,10 @@ function selectCommandShip(obj, player_color)
     -- Move selected command ship
     objRot = obj.getRotation()
     obj.setRotationSmooth({0, hRot.y + objRot.y, 0})
-    obj.setPositionSmooth({hPos.x, y, hPos.z})
+    obj.setPositionSmooth({0, 5, 0})
+    Wait.time(function()
+        obj.setPositionSmooth({hPos.x, y, hPos.z})
+    end, 0.5)
 
     -- Move matching explorer card
     local explorerGUID = selectedShipEntry.explorerCard
@@ -101,4 +105,69 @@ function selectCommandShip(obj, player_color)
 
     broadcastToAll(Player[player_color].steam_name .. " selected " ..
         selectedShipEntry.name .. " (" .. selectedFaction .. ").", {0.5, 1, 0.5})
+
+    spawnStartingResources(hPos, hForward)
+end
+
+function spawnStartingResources(pos, forward)
+    local y = pos.y + 2  -- standard board height
+
+    local left = {
+        x = -forward.z,
+        y = 0,
+        z = forward.x
+    }
+
+    -- Calculate position top left of player board
+    local resPos = {
+        x = pos.x + forward.x * 9 + left.x * 9,
+        y = y,
+        z = pos.z + forward.z * 9 + left.z * 9
+    }
+
+    local spacing = 0.4
+    -- Fuel ×2
+    for i = 0, 1 do
+        spawnResource(resourceIDs.Fuel, {
+            resPos.x + forward.x * i * spacing,
+            y,
+            resPos.z + forward.z * i * spacing
+        })
+    end
+
+    -- Biomass
+    spawnResource(resourceIDs.Biomass, {
+        resPos.x + forward.x * 2 * spacing,
+        y,
+        resPos.z + forward.z * 2 * spacing
+    })
+
+    -- Water
+    spawnResource(resourceIDs.Water, {
+        resPos.x + forward.x * 3 * spacing,
+        y,
+        resPos.z + forward.z * 3 * spacing
+    })
+
+    -- Metal
+    spawnResource(resourceIDs.Metal, {
+        resPos.x + forward.x * 4 * spacing,
+        y,
+        resPos.z + forward.z * 4 * spacing
+    })
+end
+
+function spawnResource(bagGUID, position, rotation)
+    local bag = getObjectFromGUID(bagGUID)
+    if not bag then
+        print("WARNING: Could not find bag with GUID " .. bagGUID)
+        return nil
+    end
+
+    return bag.takeObject({
+        position       = position,
+        rotation       = rotation or {0, 0, 0},
+        smooth         = true,
+        snap_to_grid   = true
+    })
 end
