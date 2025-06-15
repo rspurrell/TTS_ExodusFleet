@@ -4,11 +4,13 @@ local FactionData = {
         commandShips = {
             ["88d07b"] = {
                 explorerCard = "05cf48",
-                name = "Mining Command"
+                name = "Mining Command",
+                xu = 8
             },
             ["8bc2f6"] = {
                 explorerCard = "5c24e1",
-                name = "Transport Command"
+                name = "Transport Command",
+                xu = 8
             }
         }
     },
@@ -17,11 +19,13 @@ local FactionData = {
         commandShips = {
             ["0e1fea"] = {
                 explorerCard = "6cc899",
-                name = "Purchase Command"
+                name = "Purchase Command",
+                xu = 9
             },
             ["9e9470"] = {
                 explorerCard = "b6e19e",
-                name = "Space Command"
+                name = "Space Command",
+                xu = 8
             }
         }
     },
@@ -30,11 +34,13 @@ local FactionData = {
         commandShips = {
             ["74064d"] = {
                 explorerCard = "7e196c",
-                name = "Planning Command"
+                name = "Planning Command",
+                xu = 7
             },
             ["1a55aa"] = {
                 explorerCard = "e299cc",
-                name = "Trade Command"
+                name = "Trade Command",
+                xu = 8
             }
         }
     },
@@ -43,11 +49,13 @@ local FactionData = {
         commandShips = {
             ["d4d180"] = {
                 explorerCard = "1dcf83",
-                name = "Construction Command"
+                name = "Construction Command",
+                xu = 8
             },
             ["cb6087"] = {
                 explorerCard = "9d2bb9",
-                name = "Exploration Command"
+                name = "Exploration Command",
+                xu = 9
             }
         }
     },
@@ -56,11 +64,13 @@ local FactionData = {
         commandShips = {
             ["7aa10a"] = {
                 explorerCard = "dcc291",
-                name = "Investment Command"
+                name = "Investment Command",
+                xu = 12
             },
             ["fe5d2c"] = {
                 explorerCard = "2193dd",
-                name = "Merchant Command"
+                name = "Merchant Command",
+                xu = 8
             }
         }
     }

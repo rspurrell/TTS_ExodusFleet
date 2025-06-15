@@ -1,5 +1,6 @@
+local Utils = require("lib.Utils")
 local factionData = require("game.FactionData")
-local resourceIDs = require("game.ResourceData")
+local resourceIDs = require("game.ResourceData").ResourceIDs
 
 function initCommandShipSelect()
     for faction, data in pairs(factionData) do
@@ -106,6 +107,7 @@ function selectCommandShip(obj, player_color)
     broadcastToAll(Player[player_color].steam_name .. " selected " ..
         selectedShipEntry.name .. " (" .. selectedFaction .. ").", {0.5, 1, 0.5})
 
+    Utils.dealXUToPlayer(player_color, selectedShipEntry.xu)
     spawnStartingResources(hPos, hForward)
 end
 
@@ -128,7 +130,7 @@ function spawnStartingResources(pos, forward)
     local spacing = 0.4
     -- Fuel ×2
     for i = 0, 1 do
-        spawnResource(resourceIDs.Fuel, {
+        Utils.spawnResource(resourceIDs.Fuel, {
             resPos.x + forward.x * i * spacing,
             y,
             resPos.z + forward.z * i * spacing
@@ -136,38 +138,23 @@ function spawnStartingResources(pos, forward)
     end
 
     -- Biomass
-    spawnResource(resourceIDs.Biomass, {
+    Utils.spawnResource(resourceIDs.Biomass, {
         resPos.x + forward.x * 2 * spacing,
         y,
         resPos.z + forward.z * 2 * spacing
     })
 
     -- Water
-    spawnResource(resourceIDs.Water, {
+    Utils.spawnResource(resourceIDs.Water, {
         resPos.x + forward.x * 3 * spacing,
         y,
         resPos.z + forward.z * 3 * spacing
     })
 
     -- Metal
-    spawnResource(resourceIDs.Metal, {
+    Utils.spawnResource(resourceIDs.Metal, {
         resPos.x + forward.x * 4 * spacing,
         y,
         resPos.z + forward.z * 4 * spacing
-    })
-end
-
-function spawnResource(bagGUID, position, rotation)
-    local bag = getObjectFromGUID(bagGUID)
-    if not bag then
-        print("WARNING: Could not find bag with GUID " .. bagGUID)
-        return nil
-    end
-
-    return bag.takeObject({
-        position       = position,
-        rotation       = rotation or {0, 0, 0},
-        smooth         = true,
-        snap_to_grid   = true
     })
 end
