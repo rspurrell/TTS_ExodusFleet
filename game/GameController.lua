@@ -5,11 +5,15 @@ local RoundManager = require("game.RoundManager")
 local Ships = require("game.Ships")
 
 local playerCount = 0
+local seatedColors = {}
+local colorOrder = {"Purple", "Blue", "Green", "Red", "Orange"}
 
 function init()
     initCommandShipSelect()
     initPlanetAdvance()
     initRoundAdvance()
+    updatePlayerCount()
+
     RoundManager.init()
     Planets.init()
 end
@@ -90,4 +94,22 @@ end
 
 function selectCommandShip(obj, playerColor)
     Ships.selectCommand(obj, playerColor)
+end
+
+function updatePlayerCount()
+    local count = 0
+    seatedColors = {}
+    for _, color in ipairs(colorOrder) do
+        if Player[color].seated then
+            count = count + 1
+            seatedColors[count] = color
+        end
+    end
+    playerCount = count
+    broadcastToAll(playerCount .. " player(s) currently seated.", {0.7, 0.9, 1})
+end
+
+-- Event Handlers
+function onPlayerChangeColor(color)
+    updatePlayerCount()
 end
