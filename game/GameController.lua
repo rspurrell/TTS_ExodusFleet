@@ -11,6 +11,7 @@ function init()
     initPlanetAdvance()
     initRoundAdvance()
     RoundManager.init()
+    Planets.init()
 end
 
 function initRoundAdvance()
@@ -61,7 +62,7 @@ function initPlanetAdvance()
     end
 end
 
-function advancePlanets(obj, player_color)
+function advancePlanets()
     Planets.advance()
 end
 
