@@ -2,10 +2,41 @@ local Utils = require("lib.Utils")
 local factionData = require("game.FactionData")
 local resourceIDs = require("game.ResourceData").ResourceIDs
 local Planets = require("game.Planets")
+local RoundManager = require("game.RoundManager")
+
+local playerCount = 0
 
 function init()
     initCommandShipSelect()
     initPlanetAdvance()
+    initRoundAdvance()
+    RoundManager.init()
+end
+
+function initRoundAdvance()
+    local centralBoard = getObjectFromGUID("c20ddb")
+    if centralBoard then
+        centralBoard.createButton({
+            label = "Advance Round »",
+            click_function = "advanceRound",
+            function_owner = Global,
+            position = {1.99, 0.01, 0.155},
+            rotation = {0, 0, 0},
+            width = 2100,
+            height = 1000,
+            scale = { 0.1, 1, 0.1 },
+            font_size = 250,
+            color = {0.329, 0, 0.769},
+            font_color = {1, 1, 1},
+            tooltip = "Advance the round marker and check for scoring."
+        })
+    else
+        print("ERROR: Central board not found.")
+    end
+end
+
+function advanceRound()
+    RoundManager.nextRound(playerCount)
 end
 
 function initPlanetAdvance()
