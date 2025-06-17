@@ -2,6 +2,66 @@ local Utils = {}
 
 local resourceIDs = require("game.ResourceData").ResourceIDs
 
+Utils.createButton = function(objId, params)
+    local obj = getObjectFromGUID(objId)
+    if not obj or not params or not params.click_function then
+        print("ERROR: Invalid parameters for Utils.createButton. click_function is required.")
+        return
+    end
+
+    local obj = getObjectFromGUID(objId)
+    if not obj then
+        print("ERROR: Object with GUID " .. objId .. " not found.")
+        return
+    end
+
+    if not obj.createButton(params) then
+        print("ERROR: Failed to create button for object " .. objId)
+        return
+    end
+end
+
+Utils.editButton = function(objId, btnName, params)
+    local obj = getObjectFromGUID(objId)
+    if not obj or not btnName or not params then
+        print("ERROR: Invalid object or parameters for Utils.editButton")
+        return
+    end
+
+    for i, btn in ipairs(obj.getButtons()) do
+        if btn.click_function == btnName then
+            params.index = btn.index
+            break
+        end
+    end
+
+    if not obj.editButton(params) then
+        print("ERROR: Failed to edit button " .. btnName .. " for object " .. btn.id)
+        return
+    end
+end
+
+Utils.removeButton = function(objId, btnName)
+    local obj = getObjectFromGUID(objId)
+    if not obj or not btnName then
+        print("ERROR: Invalid object or parameters for Utils.removeButton")
+        return
+    end
+
+    local index = nil
+    for i, btn in ipairs(obj.getButtons()) do
+        if btn.click_function == btnName then
+            index = btn.index
+            break
+        end
+    end
+
+    if not obj.removeButton(index) then
+        print("ERROR: Failed to remove button " .. btnName .. " for object " .. objId)
+        return
+    end
+end
+
 local xuIDs = require("game.ResourceData").XuIDs
 local xuDenoms = require("game.ResourceData").XuDenominations
 Utils.dealXUToPlayer = function(player_color, xuAmount)
