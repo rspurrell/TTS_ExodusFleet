@@ -2,6 +2,15 @@ local Utils = {}
 
 local resourceIDs = require("game.ResourceData").ResourceIDs
 
+Utils.indexOf = function(array, value)
+    for i, v in ipairs(array) do
+        if v == value then
+            return i
+        end
+    end
+    return nil
+end
+
 Utils.createButton = function(objId, params)
     local obj = getObjectFromGUID(objId)
     if not obj or not params or not params.click_function then
