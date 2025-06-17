@@ -7,6 +7,8 @@ local roundMarkerMoveDistance = 2.34  -- Distance to move the round marker each 
 local roundLimits = { [2] = 13, [3] = 11, [4] = 8, [5] = 6 }
 local midGameScoringRound = { [2] = 8, [3] = 7, [4] = 5, [5] = 4 }
 
+local initialPlayerCount = 0
+local maxRounds = 0
 local currentRound = 0
 RoundManager.currentRound = function()
     return currentRound
@@ -17,27 +19,33 @@ RoundManager.init = function()
     roundMarker.interactable = false
 end
 
-RoundManager.start = function()
+RoundManager.start = function(playerCount)
+    if playerCount == 0 or playerCount == 1 then
+        broadcastToAll("At least 2 players must be seated to start the round.", {1, 0, 0})
+        return false
+    end
+    maxRounds = roundLimits[playerCount]
+    initialPlayerCount = playerCount
     currentRound = 1
     announceRound()
-    return currentRound
+    return true
 end
 
 RoundManager.nextRound = function(playerCount)
-    if playerCount == 0 or playerCount == 1 then
-        broadcastToAll("At least two players must be seated to advance round.", {1, 0, 0})
-        return currentRound
+    if playerCount == 0 or playerCount == 1 or initialPlayerCount ~= playerCount then
+        broadcastToAll(initialPlayerCount .. " player(s) must be seated to advance the round.", {1, 0, 0})
+        return false
     end
 
-    local maxRounds = roundLimits[playerCount]
     if currentRound >= maxRounds then
+        currentRound = maxRounds
         broadcastToAll("» Last round! Game is nearing its end. «", {1, 0.3, 0.3})
-        return currentRound
+        return false
     end
 
     if not advanceRoundMarker() then
         print("ERROR: Round marker not found.")
-        return currentRound
+        return false
     end
 
     currentRound = currentRound + 1
@@ -54,7 +62,7 @@ RoundManager.nextRound = function(playerCount)
         announceRound()
     end
 
-    return currentRound
+    return true
 end
 
 function announceRound()

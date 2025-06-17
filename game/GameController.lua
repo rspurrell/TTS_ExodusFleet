@@ -6,7 +6,6 @@ local RoundManager = require("game.RoundManager")
 local Ships = require("game.Ships")
 
 local centralBoardId = "c20ddb"  -- GUID for the central board
-local playerCount = 0
 local seatedColors = {}
 local colorOrder = {"Purple", "Blue", "Green", "Red", "Orange"}
 local claimedFactionsByColor = {}  -- Maps player color → faction data
@@ -14,7 +13,7 @@ local claimedFactionsByColor = {}  -- Maps player color → faction data
 function init()
     Utils.createButton(centralBoardId, btnConfig.startGame)
     addSelectCommandShip()
-    updatePlayerCount()
+    updateSeatedColors()
 
     RoundManager.init()
     Planets.init()
@@ -22,7 +21,7 @@ end
 
 function startGame()
     if #seatedColors == 0 or #seatedColors == 1 then
-        broadcastToAll("Cannot begin: At least 2 players are required.", {1, 0, 0})
+        broadcastToAll("At least 2 players must be seated to start the game.", {1, 0, 0})
         return
     end
 
@@ -36,6 +35,10 @@ function startGame()
 
     broadcastToAll("Starting a " .. #seatedColors .. " player game!", {0.6, 1, 0.6})
 
+    if not RoundManager.start(#seatedColors) then
+        return
+    end
+
     Planets.start()
     RoundManager.assignFirstPlayer(seatedColors)
 
@@ -44,16 +47,13 @@ function startGame()
 
     -- Cleanup unclaimed faction assets
     Ships.removeUnclaimedFactions()
-
     broadcastToAll("Unused boards, command ships, and explorers have been removed.", {0.6, 0.9, 1})
 
     Utils.removeButton(centralBoardId, "startGame")
-
-    RoundManager.start()
 end
 
 function advanceRound()
-    RoundManager.nextRound(playerCount)
+    RoundManager.nextRound(#seatedColors)
 end
 
 function advancePlanets()
@@ -75,7 +75,7 @@ function selectCommandShip(obj, playerColor)
     claimedFactionsByColor[playerColor] = selectedFactionData
 end
 
-function updatePlayerCount()
+function updateSeatedColors()
     local count = 0
     seatedColors = {}
     for _, color in ipairs(colorOrder) do
@@ -84,11 +84,10 @@ function updatePlayerCount()
             seatedColors[count] = color
         end
     end
-    playerCount = count
-    broadcastToAll(playerCount .. " player(s) currently seated.", {0.7, 0.9, 1})
+    broadcastToAll(#seatedColors .. " player(s) currently seated.", {0.7, 0.9, 1})
 end
 
 -- Event Handlers
 function onPlayerChangeColor(color)
-    updatePlayerCount()
+    updateSeatedColors()
 end
