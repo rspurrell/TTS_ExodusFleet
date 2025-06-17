@@ -28,6 +28,8 @@ function startGame()
     broadcastToAll("Starting a " .. #seatedColors .. " player game!", {0.6, 1, 0.6})
 
     Planets.start()
+    RoundManager.assignFirstPlayer(seatedColors)
+
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
     Utils.createButton(centralBoardId, btnConfig.advanceRound)
 

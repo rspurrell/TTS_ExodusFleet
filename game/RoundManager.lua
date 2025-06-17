@@ -1,5 +1,6 @@
 local RoundManager = {}
 
+local firstPlayerMarkerId = "5640f7"  -- GUID for the first player marker
 local roundMarkerId = "3001ac"
 local roundMarkerMoveDistance = 2.34  -- Distance to move the round marker each round
 
@@ -18,13 +19,13 @@ end
 
 RoundManager.start = function()
     currentRound = 1
-    anncounceRound()
+    announceRound()
     return currentRound
 end
 
 RoundManager.nextRound = function(playerCount)
-    if playerCount == 0 then
-        broadcastToAll("Player count not set. Cannot advance round.", {1, 0, 0})
+    if playerCount == 0 or playerCount == 1 then
+        broadcastToAll("At least two players must be seated to advance round.", {1, 0, 0})
         return currentRound
     end
 
@@ -50,14 +51,34 @@ RoundManager.nextRound = function(playerCount)
         broadcastToAll("» Round " .. currentRound .. ". Last round!", {0.6, 1, 0.6})
         return currentRound
     else
-        anncounceRound()
+        announceRound()
     end
 
     return currentRound
 end
 
-function anncounceRound()
+function announceRound()
     broadcastToAll("» Round " .. currentRound, {0.6, 1, 0.6})
+end
+
+RoundManager.assignFirstPlayer = function(seatedColors)
+    local chosenIndex = math.random(1, #seatedColors)
+    local chosenColor = seatedColors[chosenIndex]
+    local player = Player[chosenColor]
+    broadcastToAll(player.steam_name .. " (" .. chosenColor .. ") is the first player!", {1, 1, 0})
+
+    local pos = player.getHandTransform().position
+    local left = player.getHandTransform().right * -1
+    local firstPlayerMarker = getObjectFromGUID(firstPlayerMarkerId)
+    if firstPlayerMarker then
+        local offset = {
+            pos.x + left.x * 10,
+            pos.y + 2,
+            pos.z + left.z * 10
+        }
+        firstPlayerMarker.setPositionSmooth(offset)
+        firstPlayerMarker.interactable = false
+    end
 end
 
 function advanceRoundMarker()
