@@ -3,6 +3,8 @@ local Ships = {}
 local factionData = require("game.FactionData")
 local Utils = require("lib.Utils")
 
+local claimedFactions = {}
+
 Ships.selectCommand = function(obj, playerColor)
     -- Get hand transform and forward vector
     local handTransform = Player[playerColor].getHandTransform()
@@ -88,6 +90,38 @@ Ships.selectCommand = function(obj, playerColor)
 
     Utils.dealXUToPlayer(playerColor, selectedShipEntry.xu)
     Utils.spawnStartingResources(hPos, hForward)
+
+    claimedFactions[selectedFaction] = true
+    return {
+        CommandShip = selectedShipEntry,
+        Faction = selectedFaction,
+        PlayerColor = playerColor
+    }
+end
+
+Ships.removeUnclaimedFactions = function()
+    for faction, data in pairs(factionData) do
+        if not claimedFactions[faction] then
+            -- Destroy the player board
+            local board = getObjectFromGUID(data.playerBoard)
+            if board then
+                board.destruct()
+            end
+
+            -- Destroy command ships and explorer cards
+            for guid, ship in pairs(data.commandShips) do
+                local shipObj = getObjectFromGUID(guid)
+                if shipObj then
+                    shipObj.destruct()
+                end
+
+                local explorer = getObjectFromGUID(ship.explorerCard)
+                if explorer then
+                    explorer.destruct()
+                end
+            end
+        end
+    end
 end
 
 return Ships

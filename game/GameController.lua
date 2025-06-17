@@ -9,6 +9,7 @@ local centralBoardId = "c20ddb"  -- GUID for the central board
 local playerCount = 0
 local seatedColors = {}
 local colorOrder = {"Purple", "Blue", "Green", "Red", "Orange"}
+local claimedFactionsByColor = {}  -- Maps player color → faction data
 
 function init()
     Utils.createButton(centralBoardId, btnConfig.startGame)
@@ -25,6 +26,14 @@ function startGame()
         return
     end
 
+    -- Check that every seated player has a claimed faction
+    for _, color in ipairs(seatedColors) do
+        if not claimedFactionsByColor[color] then
+            broadcastToAll("All players must claim a faction before starting the game.", color, {1, 0.5, 0.5})
+            return
+        end
+    end
+
     broadcastToAll("Starting a " .. #seatedColors .. " player game!", {0.6, 1, 0.6})
 
     Planets.start()
@@ -32,6 +41,11 @@ function startGame()
 
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
     Utils.createButton(centralBoardId, btnConfig.advanceRound)
+
+    -- Cleanup unclaimed faction assets
+    Ships.removeUnclaimedFactions()
+
+    broadcastToAll("Unused boards, command ships, and explorers have been removed.", {0.6, 0.9, 1})
 
     Utils.removeButton(centralBoardId, "startGame")
 
@@ -57,7 +71,8 @@ function addSelectCommandShip()
 end
 
 function selectCommandShip(obj, playerColor)
-    Ships.selectCommand(obj, playerColor)
+    local selectedFactionData = Ships.selectCommand(obj, playerColor)
+    claimedFactionsByColor[playerColor] = selectedFactionData
 end
 
 function updatePlayerCount()
