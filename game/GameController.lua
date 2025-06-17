@@ -20,8 +20,8 @@ function init()
 end
 
 function startGame()
-    if #seatedColors == 0 or #seatedColors == 1 then
-        broadcastToAll("At least 2 players must be seated to start the game.", {1, 0, 0})
+    if #seatedColors < RoundManager.minPlayers() then
+        broadcastToAll("At least " .. RoundManager.minPlayers() .. " players must be seated to start the game.", {1, 0, 0})
         return
     end
 
@@ -40,10 +40,12 @@ function startGame()
     end
 
     Planets.start()
-    RoundManager.assignFirstPlayer(seatedColors)
+
+    local firstPlayer = RoundManager.assignFirstPlayer(seatedColors)
+    broadcastToAll(firstPlayer.steam_name .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
 
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
-    Utils.createButton(centralBoardId, btnConfig.advanceRound)
+    Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
 
     -- Cleanup unclaimed faction assets
     Ships.removeUnclaimedFactions()
@@ -52,8 +54,8 @@ function startGame()
     Utils.removeButton(centralBoardId, "startGame")
 end
 
-function advanceRound()
-    RoundManager.nextRound(#seatedColors)
+function advanceFleetAdmiral()
+    RoundManager.advanceFleetAdmiral(seatedColors)
 end
 
 function advancePlanets()

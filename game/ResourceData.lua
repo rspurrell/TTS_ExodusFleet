@@ -27,6 +27,18 @@ local buttonConfig = {
         font_color = {1, 1, 1},
         tooltip = "Advance the round marker and check for scoring."
     },
+    ["advanceFleetAdmiral"] = {
+        label = "Pass",
+        click_function = "advanceFleetAdmiral",
+        function_owner = Global,
+        position = {0, 0.35, -0.35},
+        rotation = {0, 0, 0},
+        width = 400,
+        height = 300,
+        scale = { 0.75, 1, 0.75 },
+        font_size = 160,
+        tooltip = "Pass the Fleet Admiral position to the next player.",
+    },
     ["selectCommandShip"] = {
         label = "☑",
         click_function = "selectCommandShip",
