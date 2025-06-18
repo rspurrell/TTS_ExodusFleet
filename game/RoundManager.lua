@@ -106,12 +106,17 @@ RoundManager.moveFleetAdmiralToColor = function(playerColor)
 
     -- Move the Fleet Admiral card to the next player's play area
     local hand = player.getHandTransform()
-    local offset = {
+    local card = getObjectFromGUID(fleetAdmiralCardId)
+    card.setPositionSmooth({
         hand.position.x + hand.right.x * 10,
         hand.position.y + 2,
         hand.position.z + hand.right.z * 10
-    }
-    getObjectFromGUID(fleetAdmiralCardId).setPositionSmooth(offset, false)
+    }, false)
+    card.setRotationSmooth({
+        0,
+        hand.rotation.y + 180, -- fleet admiral card is rotated 180 degrees
+        0
+    }, false)
     broadcastToAll(player.steam_name .. " (" .. playerColor .. ") is now the Fleet Admiral", {0.9, 0.9, 1})
     return true
 end
