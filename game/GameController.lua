@@ -91,6 +91,10 @@ function addSelectCommandShip()
 end
 
 function selectCommandShip(obj, playerColor)
+    if claimedFactionsByColor[playerColor] then
+        broadcastToColor("You have already selected a command ship and faction.", playerColor, {1, 0.4, 0.4})
+        return
+    end
     local selectedFactionData = Ships.selectCommand(obj, playerColor)
     claimedFactionsByColor[playerColor] = selectedFactionData
 end
