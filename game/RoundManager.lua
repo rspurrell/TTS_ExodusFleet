@@ -7,6 +7,7 @@ local firstPlayerMarkerId = "5640f7"
 local roundMarkerId = "3001ac"
 local roundMarkerMoveDistance = 2.34  -- Distance to move the round marker each round
 
+local finished = false
 local roundLimits = { [2] = 13, [3] = 11, [4] = 8, [5] = 6 }
 local midGameScoringRound = { [2] = 8, [3] = 7, [4] = 5, [5] = 4 }
 
@@ -23,6 +24,9 @@ end
 
 RoundManager.minPlayers = function()
     return minPlayers
+end
+RoundManager.isGameFinished = function()
+    return finished
 end
 
 RoundManager.fleetAdmiralCardId = function()
@@ -90,6 +94,7 @@ RoundManager.advanceFleetAdmiral = function(seatedColors)
         broadcastToAll("Fleet Admiral returned to first player", {0.8, 1, 0.8})
         local newRound = RoundManager.nextRound(#seatedColors)
     end
+    return true
 end
 
 RoundManager.moveFleetAdmiralToColor = function(playerColor)
@@ -119,7 +124,8 @@ RoundManager.nextRound = function(playerCount)
 
     if currentRound >= maxRounds then
         currentRound = maxRounds
-        broadcastToAll("» Last round! Game is nearing its end. «", {1, 0.3, 0.3})
+        finished = true
+        broadcastToAll("» Game finished! All players calculate final scores. «", {1, 1, 0})
         return currentRound
     end
 
@@ -136,7 +142,7 @@ RoundManager.nextRound = function(playerCount)
     end
 
     if currentRound == maxRounds then
-        broadcastToAll("» Round " .. currentRound .. ". Last round!", {0.6, 1, 0.6})
+        broadcastToAll("» Round " .. currentRound .. ". Last round!", {1, 0.3, 0.3})
         return currentRound
     else
         announceRound()

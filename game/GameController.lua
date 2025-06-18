@@ -54,8 +54,17 @@ function startGame()
     Utils.removeButton(centralBoardId, "startGame")
 end
 
+function cleanUp()
+    -- Remove all buttons
+    Utils.removeButton(centralBoardId, "advancePlanets")
+    Utils.removeButton(RoundManager.fleetAdmiralCardId(), "advanceFleetAdmiral")
+end
+
 function advanceFleetAdmiral()
     RoundManager.advanceFleetAdmiral(seatedColors)
+    if (RoundManager.isGameFinished()) then
+        cleanUp()
+    end
 end
 
 function advancePlanets()
