@@ -146,6 +146,23 @@ function updateSeatedColors()
     end
 
     broadcastToAll(#seatedColors .. " player(s) currently seated.", {0.7, 0.9, 1})
+
+    if RoundManager.currentRound() == 0 then
+        updatePlayerBoardStates(#seatedColors)
+    end
+end
+
+function updatePlayerBoardStates(playerCount)
+    local state = Utils.clamp(playerCount, 2, 5) - 1  -- convert 2–5 players to state 1–4
+    for faction, data in pairs(factionData) do
+        local board = getObjectFromGUID(data.playerBoard)
+        if board then
+            local currentState = board.getStateId()
+            if currentState ~= state then -- setting to the same state causes error
+                board.setState(state)
+            end
+        end
+    end
 end
 
 -- Event Handlers
