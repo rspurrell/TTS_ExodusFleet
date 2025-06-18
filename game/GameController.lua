@@ -10,6 +10,8 @@ local seatedColors = {}
 local colorOrder = {"Purple", "Blue", "Green", "Red", "Orange"}
 local claimedFactionsByColor = {}  -- Maps player color → faction data
 
+local debug = false
+
 function init()
     Utils.createButton(centralBoardId, btnConfig.startGame)
     addSelectCommandShip()
@@ -23,6 +25,13 @@ function startGame()
     if #seatedColors < RoundManager.minPlayers() then
         broadcastToAll("At least " .. RoundManager.minPlayers() .. " players must be seated to start the game.", {1, 0, 0})
         return
+    end
+
+    if debug then
+        -- For testing purposes, we can start the game with fewer players
+        log("Debug mode: Starting game with " .. #seatedColors .. " players.")
+        log("Seated colors: " .. table.concat(seatedColors, ", "))
+        log(claimedFactionsByColor)
     end
 
     -- Check that every seated player has a claimed faction
@@ -42,7 +51,7 @@ function startGame()
     Planets.start()
 
     local firstPlayer = RoundManager.assignFirstPlayer(seatedColors)
-    broadcastToAll(firstPlayer.steam_name .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
+    broadcastToAll((firstPlayer.steam_name or "test") .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
 
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
     Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
@@ -95,6 +104,11 @@ function updateSeatedColors()
             seatedColors[count] = color
         end
     end
+
+    if (debug) then
+        seatedColors = {"Purple", "Blue", "Green"}
+    end
+
     broadcastToAll(#seatedColors .. " player(s) currently seated.", {0.7, 0.9, 1})
 end
 

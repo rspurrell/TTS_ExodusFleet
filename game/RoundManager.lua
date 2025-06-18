@@ -117,7 +117,7 @@ RoundManager.moveFleetAdmiralToColor = function(playerColor)
         hand.rotation.y + 180, -- fleet admiral card is rotated 180 degrees
         0
     }, false)
-    broadcastToAll(player.steam_name .. " (" .. playerColor .. ") is now the Fleet Admiral", {0.9, 0.9, 1})
+    broadcastToAll((player.steam_name or "test") .. " (" .. playerColor .. ") is now the Fleet Admiral", {0.9, 0.9, 1})
     return true
 end
 
