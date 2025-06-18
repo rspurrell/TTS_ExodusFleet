@@ -31,7 +31,6 @@ Planets.start = function()
         -- Draw 3 cards from deck to slots
         for i = 1, 3 do
             local waiting = 0.25 * i
-            log(waiting)
             Wait.time(function()
                 Planets.advance(true)
             end, waiting)
