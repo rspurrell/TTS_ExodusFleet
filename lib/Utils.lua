@@ -37,7 +37,12 @@ Utils.editButton = function(objId, btnName, params)
         return
     end
 
-    for i, btn in ipairs(obj.getButtons()) do
+    local btns = obj.getButtons()
+    if not btns then
+        print("ERROR: No buttons found for object " .. objId)
+        return
+    end
+    for i, btn in ipairs(btns) do
         if btn.click_function == btnName then
             params.index = btn.index
             break
@@ -58,7 +63,12 @@ Utils.removeButton = function(objId, btnName)
     end
 
     local index = nil
-    for i, btn in ipairs(obj.getButtons()) do
+    local btns = obj.getButtons()
+    if not btns then
+        print("ERROR: No buttons found for object " .. objId)
+        return
+    end
+    for i, btn in ipairs(btns) do
         if btn.click_function == btnName then
             index = btn.index
             break
