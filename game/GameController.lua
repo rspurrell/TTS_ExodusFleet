@@ -70,6 +70,10 @@ function cleanUp()
 end
 
 function advanceFleetAdmiral()
+    if (RoundManager.isGameFinished()) then
+        return
+    end
+
     RoundManager.advanceFleetAdmiral(seatedColors)
     if (RoundManager.isGameFinished()) then
         cleanUp()

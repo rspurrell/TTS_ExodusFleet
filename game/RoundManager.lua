@@ -81,6 +81,11 @@ RoundManager.advanceFleetAdmiral = function(seatedColors)
         return false
     end
 
+    if RoundManager.isGameFinished() then
+        broadcastToAll("Game finished! Fleet Admiral cannot be advanced.", {1, 0, 0})
+        return false
+    end
+
     fleetAdmiralIndex = fleetAdmiralIndex + 1
     if fleetAdmiralIndex > #seatedColors then
         fleetAdmiralIndex = 1
