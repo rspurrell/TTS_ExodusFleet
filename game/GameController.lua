@@ -12,12 +12,36 @@ local claimedFactionsByColor = {}  -- Maps player color → faction data
 
 local debug = false
 
-function init()
-    Utils.createButton(centralBoardId, btnConfig.startGame)
-    addSelectCommandShip()
-    updateSeatedColors()
+function onLoad(savedData)
+    init(savedData)
+end
 
-    RoundManager.init()
+function onSave()
+    if RoundManager.currentRound() == 0 then
+        return nil
+    end
+
+    return JSON.encode({
+        roundData = RoundManager.save(),
+        claimedFactions = claimedFactionsByColor
+    })
+end
+
+function init(savedData)
+    local data = JSON.decode(savedData)
+    if data then
+        log("Loading game state...")
+        claimedFactionsByColor = data.claimedFactions
+        RoundManager.init(data.roundData)
+        createButtons()
+    else
+        log("Initializing for a new game...")
+        Utils.createButton(centralBoardId, btnConfig.startGame)
+        addSelectCommandShip()
+        RoundManager.init()
+    end
+
+    updateSeatedColors()
     Planets.init()
 end
 
@@ -53,8 +77,7 @@ function startGame()
     local firstPlayer = RoundManager.assignFirstPlayer(seatedColors)
     broadcastToAll((firstPlayer.steam_name or "test") .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
 
-    Utils.createButton(centralBoardId, btnConfig.advancePlanets)
-    Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
+    createButtons()
 
     -- Cleanup unclaimed faction assets
     Ships.removeUnclaimedFactions()
@@ -67,6 +90,11 @@ function cleanUp()
     -- Remove all buttons
     Utils.removeButton(centralBoardId, "advancePlanets")
     Utils.removeButton(RoundManager.fleetAdmiralCardId(), "advanceFleetAdmiral")
+end
+
+function createButtons()
+    Utils.createButton(centralBoardId, btnConfig.advancePlanets)
+    Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
 end
 
 function advanceFleetAdmiral()

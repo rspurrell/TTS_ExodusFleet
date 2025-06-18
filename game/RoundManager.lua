@@ -37,10 +37,27 @@ function canAdvance(playerCount)
     return playerCount and initialPlayerCount == playerCount
 end
 
-RoundManager.init = function()
+RoundManager.init = function(roundData)
     getObjectFromGUID(firstPlayerMarkerId).interactable = false
     getObjectFromGUID(fleetAdmiralCardId).interactable = false
     getObjectFromGUID(roundMarkerId).interactable = false
+    if roundData then
+        currentRound = roundData.currentRound or currentRound
+        initialPlayerCount = roundData.initialPlayerCount or initialPlayerCount
+        maxRounds = roundData.maxRounds or maxRounds
+        fleetAdmiralIndex = roundData.fleetAdmiralIndex or fleetAdmiralIndex
+        firstPlayerColor = roundData.firstPlayerColor or firstPlayerColor
+    end
+end
+
+RoundManager.save = function()
+    return {
+        currentRound = currentRound,
+        initialPlayerCount = initialPlayerCount,
+        maxRounds = maxRounds,
+        fleetAdmiralIndex = fleetAdmiralIndex,
+        firstPlayerColor = firstPlayerColor
+    }
 end
 
 RoundManager.start = function(playerCount)
