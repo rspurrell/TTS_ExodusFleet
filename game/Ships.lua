@@ -3,7 +3,42 @@ local Ships = {}
 local factionData = require("game.FactionData")
 local Utils = require("lib.Utils")
 
+local TAG_SHIP = "Ship"
+local TAG_COMMAND = "Command"
+local TAG_FACTION = "Faction"
+local TAG_STARTING = "Starting"
+local TAG_NEUTRAL = "Neutral"
+
+local shipDecks = { -- tags and the deck they are associated with
+    [TAG_COMMAND] = "d5770c",  -- Command Ships (original deck, may be empty)
+    [TAG_FACTION] = "a8f671",  -- Faction Ships
+    [TAG_STARTING] = "cae96a", -- Starting Ships
+    [TAG_NEUTRAL] = "2ef965",  -- Neutral Ships
+}
+
 local claimedFactions = {}
+
+Ships.ShipTag = function()
+    return TAG_SHIP
+end
+
+Ships.init = function()
+    log("Initializing Ships module...")
+    -- Tag loose Command Ships
+    for faction, data in pairs(factionData) do
+        for guid, ship in pairs(data.commandShips) do
+            getObjectFromGUID(guid).setTags({TAG_SHIP, TAG_COMMAND})
+        end
+    end
+
+    -- Tag all cards in each ship deck
+    for tag, deckGUID in pairs(shipDecks) do
+        local deck = getObjectFromGUID(deckGUID)
+        if deck and deck.type == "Deck" then
+            deck.setTags({TAG_SHIP, tag})
+        end
+    end
+end
 
 Ships.selectCommand = function(obj, playerColor)
     -- Get hand transform and forward vector

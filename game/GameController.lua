@@ -39,6 +39,7 @@ function init(savedData)
         Utils.createButton(centralBoardId, btnConfig.startGame)
         addSelectCommandShip()
         RoundManager.init()
+        Ships.init()
     end
 
     updateSeatedColors()
@@ -168,4 +169,12 @@ end
 -- Event Handlers
 function onPlayerChangeColor(color)
     updateSeatedColors()
+end
+
+function onObjectLeaveContainer(container, obj)
+    if container.hasTag(Ships.ShipTag()) and obj.type == "Card" then
+        -- This is a ship card being removed from a ship deck
+        -- copy deck tags to the card
+        obj.setTags(container.getTags())
+    end
 end
