@@ -1,5 +1,5 @@
 local Utils = require("lib.Utils")
-local btnConfig = require("game.ResourceData").ButtonConfig
+local btnConfig = require("game.Config").ButtonConfig
 local factionData = require("game.FactionData")
 local Planets = require("game.Planets")
 local RoundManager = require("game.RoundManager")
