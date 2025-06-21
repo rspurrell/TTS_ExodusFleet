@@ -10,15 +10,6 @@ Utils.clampRightAngle = function(angle)
     return math.floor((angle / 90) + 0.5) * 90
 end
 
-Utils.indexOf = function(array, value)
-    for i, v in ipairs(array) do
-        if v == value then
-            return i
-        end
-    end
-    return nil
-end
-
 Utils.createButton = function(objId, params)
     local obj = getObjectFromGUID(objId)
     if not obj or not params or not params.click_function then

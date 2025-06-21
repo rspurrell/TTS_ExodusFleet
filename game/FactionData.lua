@@ -1,7 +1,7 @@
-local FactionData = {
+local FactionData = T{
     ["B-Leaguers"] = {
         playerBoard = "1fd3ec",
-        commandShips = {
+        commandShips = T{
             ["88d07b"] = {
                 explorerCard = "05cf48",
                 name = "Mining Command",
@@ -16,7 +16,7 @@ local FactionData = {
     },
     ["Cedarim"] = {
         playerBoard = "6539aa",
-        commandShips = {
+        commandShips = T{
             ["0e1fea"] = {
                 explorerCard = "6cc899",
                 name = "Purchase Command",
@@ -31,7 +31,7 @@ local FactionData = {
     },
     ["Karpians"] = {
         playerBoard = "e70f4f",
-        commandShips = {
+        commandShips = T{
             ["74064d"] = {
                 explorerCard = "7e196c",
                 name = "Planning Command",
@@ -46,7 +46,7 @@ local FactionData = {
     },
     ["Paumerites"] = {
         playerBoard = "dad8ee",
-        commandShips = {
+        commandShips = T{
             ["d4d180"] = {
                 explorerCard = "1dcf83",
                 name = "Construction Command",
@@ -61,7 +61,7 @@ local FactionData = {
     },
     ["Wetrockers"] = {
         playerBoard = "a244b3",
-        commandShips = {
+        commandShips = T{
             ["7aa10a"] = {
                 explorerCard = "dcc291",
                 name = "Investment Command",

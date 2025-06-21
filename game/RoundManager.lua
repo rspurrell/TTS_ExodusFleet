@@ -87,7 +87,7 @@ RoundManager.assignFirstPlayer = function(seatedColors)
     getObjectFromGUID(firstPlayerMarkerId).setPositionSmooth(offset)
 
     firstPlayerColor = chosenColor
-    fleetAdmiralIndex = Utils.indexOf(seatedColors, chosenColor)
+    fleetAdmiralIndex = T(seatedColors):indexOf(chosenColor)
     RoundManager.moveFleetAdmiralToColor(chosenColor)
     return player
 end
