@@ -6,6 +6,10 @@ Utils.clamp = function(val, min, max)
     return math.max(min, math.min(val, max))
 end
 
+Utils.clampRightAngle = function(angle)
+    return math.floor((angle / 90) + 0.5) * 90
+end
+
 Utils.indexOf = function(array, value)
     for i, v in ipairs(array) do
         if v == value then

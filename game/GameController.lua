@@ -178,3 +178,13 @@ function onObjectLeaveContainer(container, obj)
         obj.setTags(container.getTags())
     end
 end
+
+function onObjectEnterZone(zone, obj)
+    if zone.hasTag(Ships.ShipTag())
+    and obj.type == "Card"
+    and obj.hasTag("Ship") then
+        Wait.time(function()
+            Ships.applyOffsetPosition(obj)
+        end, 0.2)
+    end
+end

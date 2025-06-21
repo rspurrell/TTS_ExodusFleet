@@ -16,7 +16,27 @@ local shipDecks = { -- tags and the deck they are associated with
     [TAG_NEUTRAL] = "2ef965",  -- Neutral Ships
 }
 
+local shipOffset = { -- offset corrections for 0.52 grid
+    [0] = {
+        x = 0.135,
+        z = 0.19
+    },
+    [180] = {
+        x = -0.145,
+        z = -0.235
+    },
+    [90] = {
+        x = 0.23,
+        z = -0.125
+    },
+    [270] = {
+        x = -0.245,
+        z = 0.125
+    },
+}
+
 local claimedFactions = {}
+local shipZones = {}  -- Maps player color to ship scripting trigger zone
 
 Ships.ShipTag = function()
     return TAG_SHIP
@@ -24,6 +44,8 @@ end
 
 Ships.init = function()
     log("Initializing Ships module...")
+    shipOffset[360] = shipOffset[0]  -- Add 360° rotation to ship offsets
+
     -- Tag loose Command Ships
     for faction, data in pairs(factionData) do
         for guid, ship in pairs(data.commandShips) do
@@ -126,12 +148,62 @@ Ships.selectCommand = function(obj, playerColor)
     Utils.dealXUToPlayer(playerColor, selectedShipEntry.xu)
     Utils.spawnStartingResources(hPos, hForward)
 
+    createPlayerFleetZone(playerColor)
+
     claimedFactions[selectedFaction] = true
     return {
         CommandShip = selectedShipEntry,
         Faction = selectedFaction,
         PlayerColor = playerColor
     }
+end
+
+function createPlayerFleetZone(color)
+    local hand = Player[color].getHandTransform()
+    if not hand then
+        return
+    end
+
+    -- Position in front of hand (same logic as with Admiral/Faction boards)
+    local pos = {
+        x = hand.position.x + hand.forward.x * 15.2,
+        y = 1,
+        z = hand.position.z + hand.forward.z * 15.2
+    }
+
+    local rot = {0, hand.rotation.y, 0}
+
+    local zone = spawnObject({
+        type = "ScriptingTrigger",
+        position = pos,
+        rotation = rot,
+        scale = {23, 1, 8},  -- adjustable size
+        sound = false,
+        snap_to_grid = false
+    })
+
+    zone.setName("ShipZone_" .. color)
+    zone.setVar("zoneColor", color)
+    zone.addTag(TAG_SHIP)
+    zone.interactable = false
+    shipZones[color] = zone
+end
+
+Ships.applyOffsetPosition = function(ship)
+    local pos = ship.getPosition()
+    local rot = ship.getRotation()
+    local clamprot = Utils.clampRightAngle(rot.y)
+    local offset = shipOffset[clamprot]
+    ship.setPositionSmooth({
+        pos.x + offset.x,
+        pos.y,
+        pos.z + offset.z
+    }, false, true)
+    ship.setRotationSmooth({
+        rot.x,
+        clamprot,
+        rot.z
+    }, false, true)
 end
 
 Ships.removeUnclaimedFactions = function()
