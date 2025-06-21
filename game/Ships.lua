@@ -62,11 +62,22 @@ Ships.init = function()
     end
 end
 
+Ships.selectRandomCommand = function(playerColor)
+    local factionName = Utils.randomTableKey(factionData:filter(|_, name| not claimedFactions[name]))
+    local shipId = Utils.randomTableKey(factionData[factionName].commandShips)
+    return Ships.selectCommand(getObjectFromGUID(shipId), playerColor)
+end
+
 Ships.selectCommand = function(obj, playerColor)
     -- Get hand transform and forward vector
     local handTransform = Player[playerColor].getHandTransform()
     if not handTransform then
         broadcastToColor("Error: Sit at an eligible player position", playerColor, {1,0,0})
+        return
+    end
+
+    if not obj then
+        broadcastToAll("Error: Command ship card is null.", {1,0,0})
         return
     end
 
@@ -142,7 +153,7 @@ Ships.selectCommand = function(obj, playerColor)
         end
     end
 
-    broadcastToAll(Player[playerColor].steam_name .. " selected " ..
+    broadcastToAll((Player[playerColor].steam_name or playerColor) .. " selected " ..
         selectedShipEntry.name .. " (" .. selectedFaction .. ").", {0.5, 1, 0.5})
 
     Utils.dealXUToPlayer(playerColor, selectedShipEntry.xu)

@@ -10,6 +10,17 @@ Utils.clampRightAngle = function(angle)
     return math.floor((angle / 90) + 0.5) * 90
 end
 
+function Utils.randomTableKey(tbl)
+    local keys = {}
+    for k in pairs(tbl) do
+        table.insert(keys, k)
+    end
+    if #keys == 0 then
+        return nil
+    end
+    return keys[math.random(#keys)]
+end
+
 Utils.createButton = function(objId, params)
     local obj = getObjectFromGUID(objId)
     if not obj or not params or not params.click_function then

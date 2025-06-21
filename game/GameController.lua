@@ -6,7 +6,7 @@ local RoundManager = require("game.RoundManager")
 local Ships = require("game.Ships")
 
 local centralBoardId = "c20ddb"  -- GUID for the central board
-local seatedColors = {}
+local seatedColors = T{}
 local colorOrder = {"Purple", "Blue", "Green", "Red", "Orange"}
 local claimedFactionsByColor = {}  -- Maps player color → faction data
 
@@ -36,8 +36,7 @@ function init(savedData)
         createButtons()
     else
         log("Initializing for a new game...")
-        Utils.createButton(centralBoardId, btnConfig.startGame)
-        addSelectCommandShip()
+        createPreGameButtons()
         RoundManager.init()
         Ships.init()
     end
@@ -53,10 +52,7 @@ function startGame()
     end
 
     if debug then
-        -- For testing purposes, we can start the game with fewer players
-        log("Debug mode: Starting game with " .. #seatedColors .. " players.")
-        log("Seated colors: " .. table.concat(seatedColors, ", "))
-        log(claimedFactionsByColor)
+        debugStart()
     end
 
     -- Check that every seated player has a claimed faction
@@ -84,7 +80,20 @@ function startGame()
     Ships.removeUnclaimedFactions()
     broadcastToAll("Unused boards, command ships, and explorers have been removed.", {0.6, 0.9, 1})
 
-    Utils.removeButton(centralBoardId, "startGame")
+    removePreGameButtons()
+end
+
+function debugStart()
+    -- For testing purposes, we can start the game with fewer players
+    log("Debug mode: Starting game with " .. #seatedColors .. " players.")
+    log("Seated colors: " .. table.concat(seatedColors, ", "))
+    for _, color in pairs(seatedColors) do
+        if not claimedFactionsByColor[color] then
+            claimedFactionsByColor[color] = Ships.selectRandomCommand(color)
+        end
+    end
+    log("Claimed factions by color:")
+    log(claimedFactionsByColor)
 end
 
 function cleanUp()
@@ -96,6 +105,23 @@ end
 function createButtons()
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
     Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
+end
+
+function createPreGameButtons()
+    Utils.createButton(centralBoardId, btnConfig.startGame)
+    Utils.createButton(centralBoardId, btnConfig.selectRandomCommandShip)
+    for faction, data in pairs(factionData) do
+        for guid, ship in pairs(data.commandShips) do
+            local cfg = btnConfig.selectCommandShip
+            cfg.tooltip = "Choose " .. ship.name .. " for The " .. faction
+            Utils.createButton(guid, cfg)
+        end
+    end
+end
+
+function removePreGameButtons()
+    Utils.removeButton(centralBoardId, "startGame")
+    Utils.removeButton(centralBoardId, "selectRandomCommandShip")
 end
 
 function advanceFleetAdmiral()
@@ -113,16 +139,6 @@ function advancePlanets()
     Planets.advance()
 end
 
-function addSelectCommandShip()
-    for faction, data in pairs(factionData) do
-        for guid, ship in pairs(data.commandShips) do
-            local cfg = btnConfig.selectCommandShip
-            cfg.tooltip = "Choose " .. ship.name .. " for The " .. faction
-            Utils.createButton(guid, cfg)
-        end
-    end
-end
-
 function selectCommandShip(obj, playerColor)
     if claimedFactionsByColor[playerColor] then
         broadcastToColor("You have already selected a command ship and faction.", playerColor, {1, 0.4, 0.4})
@@ -132,9 +148,18 @@ function selectCommandShip(obj, playerColor)
     claimedFactionsByColor[playerColor] = selectedFactionData
 end
 
+function selectRandomCommandShip(obj, playerColor)
+    if claimedFactionsByColor[playerColor] then
+        broadcastToColor("You have already selected a command ship and faction.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+    local selectedFactionData = Ships.selectRandomCommand(playerColor)
+    claimedFactionsByColor[playerColor] = selectedFactionData
+end
+
 function updateSeatedColors()
     local count = 0
-    seatedColors = {}
+    seatedColors = T{}
     for _, color in ipairs(colorOrder) do
         if Player[color].seated then
             count = count + 1
@@ -143,7 +168,7 @@ function updateSeatedColors()
     end
 
     if (debug) then
-        seatedColors = {"Purple", "Blue", "Green"}
+        seatedColors = T{"Purple", "Blue", "Green"}
     end
 
     broadcastToAll(#seatedColors .. " player(s) currently seated.", {0.7, 0.9, 1})
