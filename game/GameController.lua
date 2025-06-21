@@ -1,4 +1,5 @@
 local Utils = require("lib.Utils")
+local Resources = require("game.ResourceData")
 local btnConfig = require("game.Config").ButtonConfig
 local factionData = require("game.FactionData")
 local Planets = require("game.Planets")
@@ -41,8 +42,9 @@ function init(savedData)
         Ships.init()
     end
 
-    updateSeatedColors()
+    Resources.init()
     Planets.init()
+    updateSeatedColors()
 end
 
 function startGame()
@@ -146,6 +148,7 @@ function selectCommandShip(obj, playerColor)
     end
     local selectedFactionData = Ships.selectCommand(obj, playerColor)
     claimedFactionsByColor[playerColor] = selectedFactionData
+    Resources.createPlayerResourceZone(playerColor)
 end
 
 function selectRandomCommandShip(obj, playerColor)
@@ -155,6 +158,7 @@ function selectRandomCommandShip(obj, playerColor)
     end
     local selectedFactionData = Ships.selectRandomCommand(playerColor)
     claimedFactionsByColor[playerColor] = selectedFactionData
+    Resources.createPlayerResourceZone(playerColor)
 end
 
 function updateSeatedColors()
@@ -201,7 +205,18 @@ function onObjectLeaveContainer(container, obj)
         -- This is a ship card being removed from a ship deck
         -- copy deck tags to the card
         obj.setTags(container.getTags())
+    elseif container.hasTag(Resources.ResourceTag()) and obj.type == "Block" then
+        -- This is a resource block being removed from a resource bag
+        -- copy resource bag tags to the resource block
+        obj.setTags(container.getTags())
     end
+end
+
+function onObjectNumberTyped(obj, playerColor, number)
+    if obj.type == "Infinite" and obj.hasTag(Resources.ResourceTag()) then
+        return Resources.spawnResourcesAtZone(obj, playerColor, number)
+    end
+    return false
 end
 
 function onObjectEnterZone(zone, obj)

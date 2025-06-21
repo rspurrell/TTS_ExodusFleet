@@ -2,6 +2,7 @@ local Ships = {}
 
 local factionData = require("game.FactionData")
 local Utils = require("lib.Utils")
+local Resources = require("game.ResourceData")
 
 local TAG_SHIP = "Ship"
 local TAG_COMMAND = "Command"
@@ -156,8 +157,9 @@ Ships.selectCommand = function(obj, playerColor)
     broadcastToAll((Player[playerColor].steam_name or playerColor) .. " selected " ..
         selectedShipEntry.name .. " (" .. selectedFaction .. ").", {0.5, 1, 0.5})
 
-    Utils.dealXUToPlayer(playerColor, selectedShipEntry.xu)
-    Utils.spawnStartingResources(hPos, hForward)
+    Resources.dealXUToPlayer(playerColor, selectedShipEntry.xu)
+    Resources.createPlayerResourceZone(playerColor)
+    Resources.spawnStartingResources(playerColor)
 
     createPlayerFleetZone(playerColor)
 
