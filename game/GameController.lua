@@ -225,6 +225,6 @@ function onObjectEnterZone(zone, obj)
     and obj.hasTag("Ship") then
         Wait.time(function()
             Ships.applyOffsetPosition(obj)
-        end, 0.2)
+        end, 0.1)
     end
 end

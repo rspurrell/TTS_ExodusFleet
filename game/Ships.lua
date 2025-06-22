@@ -180,7 +180,7 @@ function createPlayerFleetZone(color)
     -- Position in front of hand (same logic as with Admiral/Faction boards)
     local pos = {
         x = hand.position.x + hand.forward.x * 15.2,
-        y = 1,
+        y = 0.5,
         z = hand.position.z + hand.forward.z * 15.2
     }
 
@@ -190,7 +190,7 @@ function createPlayerFleetZone(color)
         type = "ScriptingTrigger",
         position = pos,
         rotation = rot,
-        scale = {23, 1, 8},  -- adjustable size
+        scale = {23, 0.25, 8},  -- adjustable size
         sound = false,
         snap_to_grid = false
     })
