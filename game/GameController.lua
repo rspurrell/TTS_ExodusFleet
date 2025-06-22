@@ -162,14 +162,7 @@ function selectRandomCommandShip(obj, playerColor)
 end
 
 function updateSeatedColors()
-    local count = 0
-    seatedColors = T{}
-    for _, color in ipairs(colorOrder) do
-        if Player[color].seated then
-            count = count + 1
-            seatedColors[count] = color
-        end
-    end
+    seatedColors = T(getSeatedPlayers())
 
     if (debug) then
         seatedColors = T{"Purple", "Blue", "Green"}
@@ -201,13 +194,11 @@ function onPlayerChangeColor(color)
 end
 
 function onObjectLeaveContainer(container, obj)
-    if container.hasTag(Ships.ShipTag()) and obj.type == "Card" then
+    if container.hasTag(Ships.ShipTag()) and obj.type == "Card"
+    or container.hasTag(Resources.ResourceTag()) and obj.type == "Block" then
         -- This is a ship card being removed from a ship deck
-        -- copy deck tags to the card
-        obj.setTags(container.getTags())
-    elseif container.hasTag(Resources.ResourceTag()) and obj.type == "Block" then
-        -- This is a resource block being removed from a resource bag
-        -- copy resource bag tags to the resource block
+        -- or resource block being removed from a resource bag.
+        -- Copy container tags to the withdrawn object
         obj.setTags(container.getTags())
     end
 end
