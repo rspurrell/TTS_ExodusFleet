@@ -1,6 +1,12 @@
 local Utils = {}
 
-local resourceIDs = require("game.ResourceData").ResourceIDs
+Utils.startsWith = function(str, test)
+    return str:sub(1, #test) == test
+end
+
+Utils.endsWith = function(str, test)
+    return test == "" or str:sub(-#test) == test
+end
 
 Utils.clamp = function(val, min, max)
     return math.max(min, math.min(val, max))
@@ -10,7 +16,7 @@ Utils.clampRightAngle = function(angle)
     return math.floor((angle / 90) + 0.5) * 90
 end
 
-function Utils.randomTableKey(tbl)
+Utils.randomTableKey = function(tbl)
     local keys = {}
     for k in pairs(tbl) do
         table.insert(keys, k)
