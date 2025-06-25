@@ -85,6 +85,34 @@ end
 
 Ships.start = function(origin, direction, distance, playerCount)
     createShipAuctionZones(origin, direction, distance, playerCount)
+
+    local y = origin.y + 2  -- raise slightly off the table
+    local rot = {0, 180, 180} -- rotate horizontal and keep decks face down
+
+    -- Move neutral deck to first zone
+    local neutralDeck = getObjectFromGUID(shipDecks[TAG_NEUTRAL])
+    local firstNeutralZonePos = neutralDeckZones[1].getPosition()
+    neutralDeck.setRotation(rot)
+    neutralDeck.setPositionSmooth({firstNeutralZonePos.x, y, firstNeutralZonePos.z})
+    Wait.time(function()
+        neutralDeck.shuffle()
+    end, 0.5)
+
+    -- Move and prepare faction and starting decks
+    local factionDeck = getObjectFromGUID(shipDecks[TAG_FACTION])
+    local firstFactionZonePos = factionDeckZones[1].getPosition()
+    factionDeck.setRotation(rot)
+    factionDeck.setPositionSmooth({firstFactionZonePos.x, y, firstFactionZonePos.z})
+    Wait.time(function()
+        factionDeck.shuffle()
+    end, 0.5)
+
+    local startingDeck = getObjectFromGUID(shipDecks[TAG_STARTING])
+    startingDeck.setRotation(rot)
+    startingDeck.setPositionSmooth({firstFactionZonePos.x, y + 1, firstFactionZonePos.z})
+    Wait.time(function()
+        startingDeck.shuffle()
+    end, 0.5)
 end
 
 Ships.selectRandomCommand = function(playerColor)
