@@ -72,6 +72,18 @@ function startGame()
     end
 
     Planets.start()
+    local centralBoard = getObjectFromGUID(centralBoardId)
+    local cbPos = centralBoard.getPosition()
+    local cbNormBounds = centralBoard.getBoundsNormalized()
+    Ships.start({
+        x = cbPos.x - cbNormBounds.size.x / 2,  -- Starting on the left side of the board
+        y = 0.5,
+        z = cbPos.z - cbNormBounds.size.z / 2  -- Starting on the bottom side of the board
+    },{
+        x = 1,
+        y = 0,
+        z = 0
+    }, cbNormBounds.size.x, #seatedColors)
 
     local firstPlayer = RoundManager.assignFirstPlayer(seatedColors)
     broadcastToAll((firstPlayer.steam_name or "test") .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
@@ -211,11 +223,31 @@ function onObjectNumberTyped(obj, playerColor, number)
 end
 
 function onObjectEnterZone(zone, obj)
-    if zone.hasTag(Ships.ShipTag())
-    and obj.type == "Card"
-    and obj.hasTag("Ship") then
+    if obj.type ~= "Card"
+    or not obj.hasTag(Ships.ShipTag()) then
+        return
+    end
+
+    if zone.hasTag(Ships.FleetTag()) then
         Wait.time(function()
+            -- Align the ship's storage squares to the grid
             Ships.applyOffsetPosition(obj)
         end, 0.1)
+        return
+    end
+
+    if zone.hasTag(Ships.AuctionTag())
+    and (zone.hasTag(Ships.FactionTag())
+        and obj.hasTag(Ships.FactionTag())
+        or
+        zone.hasTag(Ships.NeutralTag())
+        and obj.hasTag(Ships.NeutralTag())
+    ) then
+        -- align card to the auction zone
+        obj.setPositionSmooth({
+            x = zone.getPosition().x,
+            y = zone.getPosition().y + 0.1,  -- slightly above the zone
+            z = zone.getPosition().z
+        }, false, true)
     end
 end

@@ -4,6 +4,8 @@ local factionData = require("game.FactionData")
 local Utils = require("lib.Utils")
 local Resources = require("game.ResourceData")
 
+local TAG_SHIP_AUCTION = "ShipAuction"
+local TAG_FLEET = "Fleet"
 local TAG_SHIP = "Ship"
 local TAG_COMMAND = "Command"
 local TAG_FACTION = "Faction"
@@ -38,6 +40,24 @@ local shipOffset = { -- offset corrections for 0.52 grid
 
 local claimedFactions = {}
 local shipZones = {}  -- Maps player color to ship scripting trigger zone
+local neutralDeckZones = {}  -- Maps deck tag to neutral ship deck zone
+local factionDeckZones = {}  -- Maps deck tag to faction ship deck zone
+
+Ships.AuctionTag = function()
+    return TAG_SHIP_AUCTION
+end
+
+Ships.FactionTag = function()
+    return TAG_FACTION
+end
+
+Ships.FleetTag = function()
+    return TAG_FLEET
+end
+
+Ships.NeutralTag = function()
+    return TAG_NEUTRAL
+end
 
 Ships.ShipTag = function()
     return TAG_SHIP
@@ -54,13 +74,17 @@ Ships.init = function()
         end
     end
 
-    -- Tag all cards in each ship deck
+    -- Tag each ship deck
     for tag, deckGUID in pairs(shipDecks) do
         local deck = getObjectFromGUID(deckGUID)
         if deck and deck.type == "Deck" then
             deck.setTags({TAG_SHIP, tag})
         end
     end
+end
+
+Ships.start = function(origin, direction, distance, playerCount)
+    createShipAuctionZones(origin, direction, distance, playerCount)
 end
 
 Ships.selectRandomCommand = function(playerColor)
@@ -195,11 +219,51 @@ function createPlayerFleetZone(color)
         snap_to_grid = false
     })
 
-    zone.setName("ShipZone_" .. color)
+    zone.setName("FleetZone_" .. color)
     zone.setVar("zoneColor", color)
-    zone.addTag(TAG_SHIP)
+    zone.setTags({TAG_SHIP, TAG_FLEET})
     zone.interactable = false
     shipZones[color] = zone
+end
+
+function createShipAuctionZones(origin, direction, distance, playerCount)
+    -- Create zones for the neutral and faction ship decks
+
+    -- Fetch decks
+    local neutralDeck = getObjectFromGUID(shipDecks[TAG_NEUTRAL])
+    local factionDeck = getObjectFromGUID(shipDecks[TAG_FACTION])
+
+    if not (neutralDeck and factionDeck) then
+        print("ERROR: One or more ship decks not found.")
+        return
+    end
+
+    -- Get deck sizes
+    local neutralSize = neutralDeck.getBoundsNormalized().size
+    local factionSize = factionDeck.getBoundsNormalized().size
+
+    -- Determine number of zones
+    local numNeutralZones = (playerCount <= 3) and 6 or 7
+    local numFactionZones = 7
+
+    local zoneYScale = 0.15
+
+    neutralDeckZones = Utils.createZones(origin, {
+        x = neutralSize.x,
+        y = zoneYScale,
+        z = neutralSize.z
+    }, direction, distance, numNeutralZones, "NeutralShipZone", {TAG_SHIP_AUCTION, TAG_SHIP, TAG_NEUTRAL})
+
+    local factionOffset = neutralSize.z + 0.5  -- Offset to place faction zones below neutral zones
+    factionDeckZones = Utils.createZones({
+        x = origin.x,
+        y = origin.y,
+        z = origin.z - factionOffset
+    }, {
+        x = factionSize.x,
+        y = zoneYScale,
+        z = factionSize.z
+    }, direction, distance, numFactionZones, "FactionShipZone", {TAG_SHIP_AUCTION, TAG_SHIP, TAG_FACTION})
 end
 
 Ships.applyOffsetPosition = function(ship)

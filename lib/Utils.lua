@@ -104,4 +104,38 @@ Utils.removeButton = function(objId, btnName)
     return true
 end
 
+Utils.createZones = function(origin, zoneSize, direction, distance, numZones, name, tags)
+    local totalWidth = math.abs(zoneSize.x * direction.x + zoneSize.z * direction.z) * numZones
+    if (totalWidth > distance) then
+        print("ERROR: Total width of zones exceeds specified distance.")
+        return {}
+    end
+
+    local spacing = (numZones < 1) and 0 or (distance - totalWidth) / (numZones - 1)
+    local halfWidth = zoneSize.x / 2
+    local halfDepth = zoneSize.z / 2
+
+    local zones = {}
+    for i = 0, numZones - 1 do
+        local zone = spawnObject({
+            type = "ScriptingTrigger",
+            position = {
+                origin.x + halfWidth + i * (zoneSize.x + spacing) * direction.x,
+                origin.y,
+                origin.z - halfDepth + i * (zoneSize.z + spacing) * direction.z
+            },
+            scale = {zoneSize.x, zoneSize.y, zoneSize.z},
+            rotation = {0, 0, 0},
+            snap_to_grid = false,
+            sound = false
+        })
+
+        zone.setName((name or "zone") .. "_" .. i)
+        zone.setTags(tags or {})
+        zone.interactable = false
+        table.insert(zones, zone)
+    end
+    return zones
+end
+
 return Utils
