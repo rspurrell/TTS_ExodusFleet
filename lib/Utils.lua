@@ -138,4 +138,32 @@ Utils.createZones = function(origin, zoneSize, direction, distance, numZones, na
     return zones
 end
 
+Utils.getCardFromZone = function(zone, dest, flip)
+    local zPos = zone.getPosition()
+    local objects = zone.getObjects()
+    for _, obj in ipairs(objects) do
+        if obj.tag == "Deck" then
+            local aboveDeck = zPos.y + 0.2 + obj.getBoundsNormalized().size.y / 2
+            log(aboveDeck)
+            obj = obj.takeObject({
+                position = {
+                    zPos.x,
+                    aboveDeck,
+                    zPos.z
+                }
+            })
+        end
+        if obj.tag == "Card" then
+            if flip then
+                obj.flip()
+            end
+            if dest then
+                obj.setPositionSmooth(dest, false, true)
+            end
+            return obj
+        end
+    end
+    return nil
+end
+
 return Utils

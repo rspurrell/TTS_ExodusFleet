@@ -1,5 +1,7 @@
 local Planets = {}
 
+local Utils = require("lib/Utils")
+
 local planetDeckId = "363ed3"
 local deckZoneId = "aa9994"
 local currentSlotId = "1efe44"
@@ -16,6 +18,7 @@ local thirdSlot = nil
 local discardSlot = nil
 
 Planets.init = function()
+    log("Initializing Planets module...")
     planetDeck = getObjectFromGUID(planetDeckId)
     deckZone = getObjectFromGUID(deckZoneId)
     currentSlot = getObjectFromGUID(currentSlotId)
@@ -52,22 +55,17 @@ Planets.advance = function(fast)
     end
 
     -- Move Current → Discard
-    local currentCard = currentSlot.getObjects()[1]
-    if currentCard then
-        currentCard.flip()
-        currentCard.setPositionSmooth(discardSlot.getPosition(), false, true)
-    end
+    Utils.getCardFromZone(currentSlot, discardSlot.getPosition(), true)
 
     -- Move Next → Current
-    local nextCard = nextSlot.getObjects()[1]
-    if nextCard then
-        nextCard.setPositionSmooth(currentSlot.getPosition(), false, true)
-    end
+    Utils.getCardFromZone(nextSlot, currentSlot.getPosition(), false)
 
     -- Move Third → Next
-    local thirdCard = thirdSlot.getObjects()[1]
-    if thirdCard then
-        thirdCard.setPositionSmooth(nextSlot.getPosition(), false, true)
+    Utils.getCardFromZone(thirdSlot, nextSlot.getPosition(), false)
+
+    -- Draw from deck zone → Third
+    if not Utils.getCardFromZone(deckZone, thirdSlot.getPosition(), true) then
+        print("No cards left in planet deck.")
     end
 
     if fast then
@@ -79,22 +77,6 @@ Planets.advance = function(fast)
 
         broadcastToAll("Planets have advanced", {0.8, 0.9, 1})
     end
-
-    -- Draw from deck zone → Third
-    local deckObjects = deckZone.getObjects()
-    for _, obj in ipairs(deckObjects) do
-        if obj.tag == "Deck" then
-            obj = obj.takeObject({
-                position = deckZone.getPosition()
-            })
-        end
-        if obj.tag == "Card" then
-            obj.flip()
-            obj.setPositionSmooth(thirdSlot.getPosition(), false, true)
-        end
-        return
-    end
-    print("No cards left in planet deck.")
 end
 
 return Planets
