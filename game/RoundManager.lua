@@ -25,8 +25,13 @@ end
 RoundManager.minPlayers = function()
     return minPlayers
 end
+
 RoundManager.isGameFinished = function()
     return finished
+end
+
+RoundManager.getPlayerCount = function()
+    return initialPlayerCount
 end
 
 RoundManager.fleetAdmiralCardId = function()

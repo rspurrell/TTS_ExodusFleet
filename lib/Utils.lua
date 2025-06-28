@@ -144,7 +144,6 @@ Utils.getCardFromZone = function(zone, dest, flip)
     for _, obj in ipairs(objects) do
         if obj.tag == "Deck" then
             local aboveDeck = zPos.y + 0.2 + obj.getBoundsNormalized().size.y / 2
-            log(aboveDeck)
             obj = obj.takeObject({
                 position = {
                     zPos.x,
@@ -164,6 +163,55 @@ Utils.getCardFromZone = function(zone, dest, flip)
         end
     end
     return nil
+end
+
+Utils.justifyZones = function(zones, step, callback, delay)
+    step = step or 1 -- Default step is 1
+    if step ~= 1 and step ~= -1 then
+        log("Invalid step value. Must be 1 or -1.")
+        return nil
+    end
+
+    if not zones or #zones == 0 then
+        log("No zones provided for compression.")
+        return nil
+    end
+
+    local targetIndex = 1 -- current valid zone index
+    local i = 1
+    if step == -1 then
+        targetIndex = #zones -- start from the last zone
+        i = #zones -- start from the last zone
+    end
+
+    local objectsMoved = false
+    while i >= 1 and i <= #zones do
+        local zone = zones[i]
+        local objects = zone.getObjects()
+        if (#objects > 0 and targetIndex == i) then -- current zone has objects and is the target zone
+            targetIndex = i + step -- step target index
+        elseif (#objects > 0) then
+            objectsMoved = true
+            for _, obj in ipairs(objects) do
+                local dest = zones[targetIndex].getPosition()
+                obj.setPositionSmooth(dest, false, true)
+                targetIndex = targetIndex + step  -- next available zone
+            end
+        end
+        i = i + step
+    end
+
+    local filledZoneCount = targetIndex - 1
+    if filledZoneCount == 0 or not objectsMoved then
+        delay = 0
+    end
+
+    if callback then
+        Wait.time(function()
+            callback(filledZoneCount)
+        end, delay or 0.25) -- slight delay to ensure all objects are moved before callback
+    end
+    return filledZoneCount
 end
 
 return Utils

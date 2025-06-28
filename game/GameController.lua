@@ -77,13 +77,13 @@ function startGame()
     local cbNormBounds = centralBoard.getBoundsNormalized()
     Ships.start({
         x = cbPos.x - cbNormBounds.size.x / 2,  -- Starting on the left side of the board
-        y = 0.5,
+        y = 0.95,
         z = cbPos.z - cbNormBounds.size.z / 2  -- Starting on the bottom side of the board
     },{
         x = 1,
         y = 0,
         z = 0
-    }, cbNormBounds.size.x, #seatedColors)
+    }, cbNormBounds.size.x, RoundManager.getPlayerCount())
 
     local firstPlayer = RoundManager.assignFirstPlayer(seatedColors)
     broadcastToAll((firstPlayer.steam_name or "test") .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
@@ -237,10 +237,12 @@ function onObjectEnterZone(zone, obj)
     end
 
     if zone.hasTag(Ships.AuctionTag())
-    and (zone.hasTag(Ships.FactionTag())
+    and (Ships.IsFactionAuctionZoneSnappingEnabled()
+        and zone.hasTag(Ships.FactionTag())
         and obj.hasTag(Ships.FactionTag())
         or
-        zone.hasTag(Ships.NeutralTag())
+        Ships.IsNeutralAuctionZoneSnappingEnabled()
+        and zone.hasTag(Ships.NeutralTag())
         and obj.hasTag(Ships.NeutralTag())
     ) then
         -- align card to the auction zone

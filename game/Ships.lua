@@ -38,6 +38,8 @@ local shipOffset = { -- offset corrections for 0.52 grid
     },
 }
 
+local neutralAuctionZoneSnappingEnabled = true  -- Enable snapping to grid for neutral auction zones
+local factionAuctionZoneSnappingEnabled = true  -- Enable snapping to grid for faction auction zones
 local claimedFactions = {}
 local shipZones = {}  -- Maps player color to ship scripting trigger zone
 local neutralDeckZones = {}  -- Maps deck tag to neutral ship deck zone
@@ -61,6 +63,14 @@ end
 
 Ships.ShipTag = function()
     return TAG_SHIP
+end
+
+Ships.IsNeutralAuctionZoneSnappingEnabled = function(value)
+    return neutralAuctionZoneSnappingEnabled
+end
+
+Ships.IsFactionAuctionZoneSnappingEnabled = function(value)
+    return factionAuctionZoneSnappingEnabled
 end
 
 Ships.init = function()
@@ -113,6 +123,72 @@ Ships.start = function(origin, direction, distance, playerCount)
     Wait.time(function()
         startingDeck.shuffle()
     end, 0.5)
+
+    Wait.time(function()
+        Ships.advanceNeutralShips()
+        Ships.advanceFactionShips(playerCount)
+    end, 2)
+end
+
+Ships.advanceNeutralShips = function()
+    if #neutralDeckZones < 3 then
+        print("ERROR: Not enough neutral ship zones created.")
+        return
+    end
+
+    neutralAuctionZoneSnappingEnabled = false
+    advanceAuctionZones(neutralDeckZones, #neutralDeckZones - 2, function()
+        log("Re-enabling neutral auction zone snapping.")
+        neutralAuctionZoneSnappingEnabled = true
+    end)
+end
+
+Ships.advanceFactionShips = function(playerCount)
+    if #factionDeckZones < 3 then
+        print("ERROR: Not enough faction ship zones created.")
+        return
+    end
+
+    factionAuctionZoneSnappingEnabled = false
+    local numToDiscard = (playerCount <= 3) and 1 or 2  -- discard 1 or 2 existing ships based on player count
+    local auctionZones = {table.unpack(factionDeckZones, 2, #factionDeckZones - 1)}
+
+     -- left justify existing ships in faction auction zones before advancing
+    Utils.justifyZones({table.unpack(factionDeckZones, 2, #factionDeckZones - 1)}, 1, function(existingShipCount)
+        if numToDiscard > existingShipCount then
+            numToDiscard = existingShipCount  -- don't discard more than available
+        end
+        local numShipsToDeal = #auctionZones + numToDiscard - existingShipCount  -- always fill faction ship auction zones
+        print("Refreshing faction ships on auction. Discarding " .. numToDiscard .. " ship(s).")
+        advanceAuctionZones(factionDeckZones, numShipsToDeal, function()
+            log("Re-enabling faction auction zone snapping.")
+            factionAuctionZoneSnappingEnabled = true
+        end)
+    end)
+end
+
+function advanceAuctionZones(zones, numToDeal, callback)
+    if #zones < 3 then
+        print("ERROR: Not enough auction zones created.")
+        return
+    end
+
+    local delay = 0
+    local delayStep = 0.25  -- for animation spacing
+    for j = 1, numToDeal, 1 do
+        Wait.time(function()
+            for i = #zones - 1, 1, -1 do
+                local source = zones[i]
+                local targetPos = zones[i + 1].getPosition()
+                Utils.getCardFromZone(source, targetPos, (i == 1) or (i + 1 == #zones))
+            end
+
+            if j == numToDeal and callback then
+                Wait.time(callback, delayStep)
+            end
+        end, delay)
+        delay = delay + delayStep
+    end
 end
 
 Ships.selectRandomCommand = function(playerColor)
@@ -274,7 +350,7 @@ function createShipAuctionZones(origin, direction, distance, playerCount)
     local numNeutralZones = (playerCount <= 3) and 6 or 7
     local numFactionZones = 7
 
-    local zoneYScale = 0.15
+    local zoneYScale = 0.8
 
     neutralDeckZones = Utils.createZones(origin, {
         x = neutralSize.x,
