@@ -159,7 +159,7 @@ Ships.advanceFactionShips = function(playerCount)
             numToDiscard = existingShipCount  -- don't discard more than available
         end
         local numShipsToDeal = #auctionZones + numToDiscard - existingShipCount  -- always fill faction ship auction zones
-        print("Refreshing faction ships on auction. Discarding " .. numToDiscard .. " ship(s).")
+        printToAll("Updating faction ships on auction. Discarding " .. numToDiscard .. " ship(s).")
         advanceAuctionZones(factionDeckZones, numShipsToDeal, function()
             log("Re-enabling faction auction zone snapping.")
             factionAuctionZoneSnappingEnabled = true

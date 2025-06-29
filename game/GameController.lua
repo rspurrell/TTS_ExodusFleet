@@ -143,7 +143,13 @@ function advanceFleetAdmiral()
         return
     end
 
-    RoundManager.advanceFleetAdmiral(seatedColors)
+    local result = RoundManager.advanceFleetAdmiral(seatedColors)
+    if result.success then
+        if result.isMidGame then
+            Ships.advanceNeutralShips()
+            printToAll("Updating neutral ships on auction.")
+        end
+    end
     if (RoundManager.isGameFinished()) then
         cleanUp()
     end

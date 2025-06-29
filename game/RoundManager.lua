@@ -98,14 +98,17 @@ RoundManager.assignFirstPlayer = function(seatedColors)
 end
 
 RoundManager.advanceFleetAdmiral = function(seatedColors)
+    local result = {
+        success = false
+    }
     if not fleetAdmiralIndex or not canAdvance(#seatedColors) then
         broadcastToAll(initialPlayerCount .. " player(s) must be seated to advance the Fleet Admiral.", {1, 0, 0})
-        return false
+        return result
     end
 
     if RoundManager.isGameFinished() then
         broadcastToAll("Game finished! Fleet Admiral cannot be advanced.", {1, 0, 0})
-        return false
+        return result
     end
 
     fleetAdmiralIndex = fleetAdmiralIndex + 1
@@ -114,14 +117,21 @@ RoundManager.advanceFleetAdmiral = function(seatedColors)
     end
 
     local nextColor = seatedColors[fleetAdmiralIndex]
-    RoundManager.moveFleetAdmiralToColor(nextColor)
+    if not RoundManager.moveFleetAdmiralToColor(nextColor) then
+        return result
+    end
 
     -- Check for return to first player → advance round
     if nextColor == firstPlayerColor then
         broadcastToAll("Fleet Admiral returned to first player", {0.8, 1, 0.8})
-        local newRound = RoundManager.nextRound(#seatedColors)
+        RoundManager.nextRound(initialPlayerCount)
     end
-    return true
+
+    result.success = true
+    result.color = nextColor
+    result.round = currentRound
+    result.isMidGame = nextColor == firstPlayerColor and currentRound == midGameScoringRound[initialPlayerCount]
+    return result
 end
 
 RoundManager.moveFleetAdmiralToColor = function(playerColor)
