@@ -9,7 +9,6 @@ local PHASE_EXPLORERS = "Explorers"
 local phases = {PHASE_INCOME, PHASE_MINERS, PHASE_TRANSPORTERS, PHASE_BUILDERS, PHASE_EXPLORERS}
 local prevPhase = nil
 
--- Optional: Expose phase names if needed externally
 PhaseManager.getPhases = function()
     return phases
 end
@@ -20,7 +19,7 @@ PhaseManager.getPreviousPhase = function()
 end
 
 -- Validate if a phase choice is allowed
-function isPhaseAllowed(phaseName)
+local function isPhaseAllowed(phaseName)
     if not phaseName then return false end
 
     -- Check if phaseName is one of the valid phases
@@ -37,7 +36,7 @@ function isPhaseAllowed(phaseName)
     end
 
     -- Cannot select the same phase as the previous player
-    return phaseName != prevPhase
+    return phaseName ~= prevPhase
 end
 
 PhaseManager.selectPhase = function(playerColor, phaseName)
@@ -51,7 +50,7 @@ PhaseManager.selectPhase = function(playerColor, phaseName)
     return true
 end
 
-PhaseManager.resolvePhaseEffects = function()
+PhaseManager.resolvePhaseEffects = function(phaseName)
     if phaseName == PHASE_INCOME then
         -- TODO: Trigger Income phase logic
         broadcastToAll(PHASE_INCOME .. " Phase: Players collect XU based on their fleet income.", {0.9, 1, 0.9})
@@ -73,6 +72,10 @@ PhaseManager.resolvePhaseEffects = function()
 end
 
 PhaseManager.resolvePostPhaseEffects = function(postPhaseFunctions)
+    if not prevPhase then
+        print("PhaseManager: No previous phase to resolve post-phase effects.")
+        return
+    end
     log("PhaseManager: Resolving post-phase effects for " .. prevPhase)
     if prevPhase == PHASE_MINERS then
         if postPhaseFunctions and postPhaseFunctions.miners then

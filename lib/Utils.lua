@@ -82,7 +82,7 @@ Utils.removeButton = function(objId, btnName)
     local index = nil
     local btns = obj.getButtons()
     if not btns then
-        print("ERROR: No buttons found for object " .. objId)
+        print("WARN: No buttons found for object " .. objId)
         return false
     end
     for i, btn in ipairs(btns) do

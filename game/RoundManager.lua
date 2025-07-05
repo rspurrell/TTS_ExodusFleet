@@ -68,6 +68,26 @@ RoundManager.save = function()
     }
 end
 
+local advanceRoundMarker = function()
+    local roundMarker = getObjectFromGUID(roundMarkerId)
+    if not roundMarker then
+        return false
+    end
+
+    local pos = roundMarker.getPosition()
+    local newPos = {pos.x + roundMarkerMoveDistance, pos.y, pos.z}
+    roundMarker.setPositionSmooth(newPos)
+    return true
+end
+
+local announceRound = function()
+    broadcastToAll("» Round " .. currentRound, {0.6, 1, 0.6})
+end
+
+local canAdvance = function(playerCount)
+    return playerCount and initialPlayerCount == playerCount
+end
+
 RoundManager.start = function(playerCount)
     if playerCount < minPlayers then
         broadcastToAll("At least " .. minPlayers .. " players must be seated to start the round.", {1, 0, 0})
@@ -99,10 +119,6 @@ RoundManager.assignFirstPlayer = function(seatedColors)
     fleetAdmiralIndex = T(seatedColors):indexOf(chosenColor)
     RoundManager.moveFleetAdmiralToColor(chosenColor)
     return player
-end
-
-function canAdvance(playerCount)
-    return playerCount and initialPlayerCount == playerCount
 end
 
 RoundManager.advanceFleetAdmiral = function(seatedColors)
@@ -200,22 +216,6 @@ RoundManager.nextRound = function(playerCount)
     end
 
     return currentRound
-end
-
-function advanceRoundMarker()
-    local roundMarker = getObjectFromGUID(roundMarkerId)
-    if not roundMarker then
-        return false
-    end
-
-    local pos = roundMarker.getPosition()
-    local newPos = {pos.x + roundMarkerMoveDistance, pos.y, pos.z}
-    roundMarker.setPositionSmooth(newPos)
-    return true
-end
-
-function announceRound()
-    broadcastToAll("» Round " .. currentRound, {0.6, 1, 0.6})
 end
 
 return RoundManager
