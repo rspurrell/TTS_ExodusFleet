@@ -3,6 +3,7 @@ local Resources = require("game.ResourceData")
 local btnConfig = require("game.Config").ButtonConfig
 local factionData = require("game.FactionData")
 local Planets = require("game.Planets")
+local PhaseManager = require("game.PhaseManager")
 local RoundManager = require("game.RoundManager")
 local Ships = require("game.Ships")
 
@@ -24,7 +25,8 @@ function onSave()
 
     return JSON.encode({
         roundData = RoundManager.save(),
-        claimedFactions = claimedFactionsByColor
+        claimedFactions = claimedFactionsByColor,
+        phaseData = PhaseManager.save()
     })
 end
 
@@ -34,6 +36,7 @@ function init(savedData)
         log("Loading game state...")
         claimedFactionsByColor = data.claimedFactions
         RoundManager.init(data.roundData)
+        PhaseManager.load(data.phaseData)
         createButtons()
     else
         log("Initializing for a new game...")
@@ -95,6 +98,7 @@ function startGame()
     broadcastToAll("Unused boards, command ships, and explorers have been removed.", {0.6, 0.9, 1})
 
     removePreGameButtons()
+    createPhaseSelectionButtons(firstPlayer.color)
 end
 
 function debugStart()
@@ -133,6 +137,69 @@ function createPreGameButtons()
     end
 end
 
+function createPhaseSelectionButtons(playerColor)
+    local faction = claimedFactionsByColor[playerColor]
+    if not faction then
+        broadcastToColor("No faction board found for your color.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+
+    local board = getObjectFromGUID(faction.PlayerBoardId)
+    if not board then
+        broadcastToColor("Player board for " .. faction .. " not found.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+
+    -- Remove existing phase buttons
+    removePhaseButtons(playerColor)
+
+    local phases = PhaseManager.getPhases()
+    local prevPhase = PhaseManager.getPreviousPhase()
+    local btn = btnConfig.SelectPhase
+    local btnPos = btn.position
+    local btnXOffset = 0.805
+    local btnIndex = 0
+
+    for i, phaseName in ipairs(phases) do
+        if phaseName ~= prevPhase then
+            btn.label = phaseName
+            btn.click_function = "selectPhase_" .. phaseName
+            btn.position = {
+                btnPos[1] + btnIndex * btnXOffset,
+                btnPos[2],
+                btnPos[3]
+            }
+            btn.tooltip = "Choose the " .. phaseName .. " phase"
+            board.createButton(btn)
+        end
+        btnIndex = btnIndex + 1
+    end
+    btn.position[1] = btnPos[1] -- Reset to original position for next admiral
+end
+
+function removePhaseButtons(playerColor)
+    local faction = claimedFactionsByColor[playerColor]
+    if not faction then
+        broadcastToColor("No faction board found for your color.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+
+    local board = getObjectFromGUID(faction.PlayerBoardId)
+    if not board then
+        broadcastToColor("Player board for " .. faction .. " not found.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+
+    local btns = board.getButtons()
+    if btns then
+        for _, btn in ipairs(btns) do
+            if string.find(btn.click_function, "selectPhase_") then
+                board.removeButton(btn.index)
+            end
+        end
+    end
+end
+
 function removePreGameButtons()
     Utils.removeButton(centralBoardId, "startGame")
     Utils.removeButton(centralBoardId, "selectRandomCommandShip")
@@ -143,12 +210,28 @@ function advanceFleetAdmiral()
         return
     end
 
+    removePhaseButtons(RoundManager.admiralColor())
+
+local postPhaseFunctions = {
+    miners = function()
+        Planets.advance()
+            printToAll("Updating planets after miners phase.")
+    end,
+    builders = function()
+        Ships.advanceFactionShips(RoundManager.getPlayerCount())
+        printToAll("Updating faction ships on auction.")
+    end
+}
+
+    PhaseManager.resolvePostPhaseEffects(postPhaseFunctions)
+
     local result = RoundManager.advanceFleetAdmiral(seatedColors)
     if result.success then
         if result.isMidGame then
             Ships.advanceNeutralShips()
             printToAll("Updating neutral ships on auction.")
         end
+        createPhaseSelectionButtons(result.color)
     end
     if (RoundManager.isGameFinished()) then
         cleanUp()
@@ -177,6 +260,40 @@ function selectRandomCommandShip(obj, playerColor)
     local selectedFactionData = Ships.selectRandomCommand(playerColor)
     claimedFactionsByColor[playerColor] = selectedFactionData
     Resources.createPlayerResourceZone(playerColor)
+end
+
+function selectPhase(playerColor, phaseName)
+    local admiralColor = RoundManager.admiralColor()
+    if admiralColor and playerColor ~= admiralColor then
+        broadcastToColor("Only the Fleet Admiral (" .. admiralColor .. ") can select the phase.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+    if PhaseManager.selectPhase(admiralColor, phaseName) then
+        -- Remove buttons now that phase is locked
+        removePhaseButtons(admiralColor)
+    else
+        broadcastToColor("Invalid phase choice: " .. phaseName, admiralColor, {1, 0.5, 0.5})
+    end
+end
+
+function selectPhase_Income(_, playerColor)
+    selectPhase(playerColor, PhaseManager.getPhases()[1])
+end
+
+function selectPhase_Miners(_, playerColor)
+    selectPhase(playerColor, PhaseManager.getPhases()[2])
+end
+
+function selectPhase_Transporters(_, playerColor)
+    selectPhase(playerColor, PhaseManager.getPhases()[3])
+end
+
+function selectPhase_Builders(_, playerColor)
+    selectPhase(playerColor, PhaseManager.getPhases()[4])
+end
+
+function selectPhase_Explorers(_, playerColor)
+    selectPhase(playerColor, PhaseManager.getPhases()[5])
 end
 
 function updateSeatedColors()

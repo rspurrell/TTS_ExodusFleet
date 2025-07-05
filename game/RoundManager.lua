@@ -17,6 +17,11 @@ local maxRounds = 0
 local currentRound = 0
 local fleetAdmiralIndex = nil  -- current index in seatedColors
 local firstPlayerColor = nil   -- color of the player who started first
+local admiralColor = nil  -- color of the current admiral player
+
+RoundManager.admiralColor = function()
+    return admiralColor
+end
 
 RoundManager.currentRound = function()
     return currentRound
@@ -38,16 +43,13 @@ RoundManager.fleetAdmiralCardId = function()
     return fleetAdmiralCardId
 end
 
-function canAdvance(playerCount)
-    return playerCount and initialPlayerCount == playerCount
-end
-
 RoundManager.init = function(roundData)
     getObjectFromGUID(firstPlayerMarkerId).interactable = false
     getObjectFromGUID(fleetAdmiralCardId).interactable = false
     getObjectFromGUID(roundMarkerId).interactable = false
     if roundData then
         currentRound = roundData.currentRound or currentRound
+        admiralColor = roundData.admiralColor or admiralColor
         initialPlayerCount = roundData.initialPlayerCount or initialPlayerCount
         maxRounds = roundData.maxRounds or maxRounds
         fleetAdmiralIndex = roundData.fleetAdmiralIndex or fleetAdmiralIndex
@@ -57,6 +59,7 @@ end
 
 RoundManager.save = function()
     return {
+        admiralColor = admiralColor,
         currentRound = currentRound,
         initialPlayerCount = initialPlayerCount,
         maxRounds = maxRounds,
@@ -81,6 +84,7 @@ RoundManager.assignFirstPlayer = function(seatedColors)
     local chosenIndex = math.random(1, #seatedColors)
     local chosenColor = seatedColors[chosenIndex]
     local player = Player[chosenColor]
+    admiralColor = chosenColor
 
     local pos = player.getHandTransform().position
     local left = player.getHandTransform().right * -1
@@ -95,6 +99,10 @@ RoundManager.assignFirstPlayer = function(seatedColors)
     fleetAdmiralIndex = T(seatedColors):indexOf(chosenColor)
     RoundManager.moveFleetAdmiralToColor(chosenColor)
     return player
+end
+
+function canAdvance(playerCount)
+    return playerCount and initialPlayerCount == playerCount
 end
 
 RoundManager.advanceFleetAdmiral = function(seatedColors)
@@ -127,6 +135,7 @@ RoundManager.advanceFleetAdmiral = function(seatedColors)
         RoundManager.nextRound(initialPlayerCount)
     end
 
+    admiralColor = nextColor
     result.success = true
     result.color = nextColor
     result.round = currentRound

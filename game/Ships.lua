@@ -150,7 +150,7 @@ Ships.advanceFactionShips = function(playerCount)
     end
 
     factionAuctionZoneSnappingEnabled = false
-    local numToDiscard = (playerCount <= 3) and 1 or 2  -- discard 1 or 2 existing ships based on player count
+    local numToDiscard = (playerCount <= 3) and 2 or 1  -- discard 1 or 2 existing ships based on player count
     local auctionZones = {table.unpack(factionDeckZones, 2, #factionDeckZones - 1)}
 
      -- left justify existing ships in faction auction zones before advancing
@@ -295,7 +295,8 @@ Ships.selectCommand = function(obj, playerColor)
     return {
         CommandShip = selectedShipEntry,
         Faction = selectedFaction,
-        PlayerColor = playerColor
+        PlayerColor = playerColor,
+        PlayerBoardId = boardGUID
     }
 end
 

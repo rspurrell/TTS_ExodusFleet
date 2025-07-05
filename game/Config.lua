@@ -48,6 +48,19 @@ local buttonConfig = {
         height = 120,
         font_size = 75
     },
+    ["SelectPhase"] = {
+        function_owner = Global,
+        position = {
+            -1.60,
+            0.2,
+            -0.293
+        },
+        width = 2100,
+        height = 400,
+        scale = { 0.1, 1, 0.1 },
+        font_size = 200,
+        color = {0.8, 0.8, 0.8},
+    },
     ["selectRandomCommandShip"] = {
         label = "Random\nCommand Ship",
         click_function = "selectRandomCommandShip",
