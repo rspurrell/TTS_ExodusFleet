@@ -122,7 +122,6 @@ end
 
 function createButtons()
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
-    Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
 end
 
 function createPreGameButtons()
@@ -205,17 +204,27 @@ function removePreGameButtons()
     Utils.removeButton(centralBoardId, "selectRandomCommandShip")
 end
 
-function advanceFleetAdmiral()
+function advanceFleetAdmiral(_, playerColor)
     if (RoundManager.isGameFinished()) then
         return
     end
 
+    local admiralColor = RoundManager.admiralColor()
+    if not debug and admiralColor and playerColor ~= admiralColor then
+        broadcastToColor("Only the Fleet Admiral (" .. admiralColor .. ") may pass.", playerColor, {1, 0.4, 0.4})
+        return
+    end
+
+    -- ensure we have removed any previous phase buttons
     removePhaseButtons(RoundManager.admiralColor())
+
+    -- Remove the advance Fleet Admiral button
+    Utils.removeButton(RoundManager.fleetAdmiralCardId(), "advanceFleetAdmiral")
 
 local postPhaseFunctions = {
     miners = function()
         Planets.advance()
-            printToAll("Updating planets after miners phase.")
+            printToAll("Updating planets after Miners phase.")
     end,
     builders = function()
         Ships.advanceFactionShips(RoundManager.getPlayerCount())
@@ -264,13 +273,15 @@ end
 
 function selectPhase(playerColor, phaseName)
     local admiralColor = RoundManager.admiralColor()
-    if admiralColor and playerColor ~= admiralColor then
-        broadcastToColor("Only the Fleet Admiral (" .. admiralColor .. ") can select the phase.", playerColor, {1, 0.4, 0.4})
+    if not debug and admiralColor and playerColor ~= admiralColor then
+        broadcastToColor("Only the Fleet Admiral (" .. admiralColor .. ") may select the phase.", playerColor, {1, 0.4, 0.4})
         return
     end
     if PhaseManager.selectPhase(admiralColor, phaseName) then
-        -- Remove buttons now that phase is locked
+        -- Remove phase buttons now that phase is locked
         removePhaseButtons(admiralColor)
+        -- Create the advance Fleet Admiral button
+        Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
     else
         broadcastToColor("Invalid phase choice: " .. phaseName, admiralColor, {1, 0.5, 0.5})
     end
