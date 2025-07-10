@@ -8,6 +8,11 @@ local PHASE_EXPLORERS = "Explorers"
 
 local phases = {PHASE_INCOME, PHASE_MINERS, PHASE_TRANSPORTERS, PHASE_BUILDERS, PHASE_EXPLORERS}
 local prevPhase = nil
+local overridePhase = false
+local phaseActive = false
+
+-- event handler for phase selection
+PhaseManager.onSelect = nil
 
 PhaseManager.getPhases = function()
     return phases
@@ -35,18 +40,34 @@ local function isPhaseAllowed(phaseName)
         return false
     end
 
-    -- Cannot select the same phase as the previous player
-    return phaseName ~= prevPhase
+    -- Cannot select the same phase as the previous player unless overridden
+    return overridePhase or phaseName ~= prevPhase
+end
+
+PhaseManager.forcePreviousPhase = function(playerColor)
+    overridePhase = true
+    local result = PhaseManager.selectPhase(playerColor, prevPhase)
+    overridePhase = false
+    return result, prevPhase
 end
 
 PhaseManager.selectPhase = function(playerColor, phaseName)
+    if phaseActive then
+        print("Cannot select a new phase while another phase is active.")
+        return false
+    end
     if not isPhaseAllowed(phaseName) then
         print("Phase  '" .. phaseName .. "' not allowed.")
         return false
     end
 
+    if not PhaseManager.onSelect(playerColor, phaseName) then
+        return false
+    end
+
     prevPhase = phaseName
     broadcastToAll((Player[playerColor].steam_name or playerColor) .. " selected " .. phaseName .. ".", playerColor)
+    phaseActive = true
     return true
 end
 
@@ -72,8 +93,14 @@ PhaseManager.resolvePhaseEffects = function(phaseName)
 end
 
 PhaseManager.resolvePostPhaseEffects = function(postPhaseFunctions)
+    if not phaseActive then
+        print("PhaseManager: No active phase to resolve post-phase effects for")
+        return
+    end
+    phaseActive = false
+
     if not prevPhase then
-        print("PhaseManager: No previous phase to resolve post-phase effects.")
+        print("PhaseManager: No previous phase to resolve post-phase effects for")
         return
     end
     log("PhaseManager: Resolving post-phase effects for " .. prevPhase)
@@ -93,13 +120,18 @@ PhaseManager.resolvePostPhaseEffects = function(postPhaseFunctions)
 end
 
 PhaseManager.init = function(data)
-    prevPhase = data and data.prevPhase or nil
+    if not data then
+        return
+    end
+    prevPhase = data.prevPhase
+    phaseActive = data.phaseActive or false
 end
 
 -- Save/Load support
 PhaseManager.save = function()
     return {
-        prevPhase = prevPhase
+        prevPhase = prevPhase,
+        phaseActive = phaseActive,
     }
 end
 

@@ -6,6 +6,8 @@ local Planets = require("game.Planets")
 local PhaseManager = require("game.PhaseManager")
 local RoundManager = require("game.RoundManager")
 local Ships = require("game.Ships")
+local Explorers = require("game.Explorers")
+local CardAbilities = require("game.CardAbilities")
 
 local centralBoardId = "c20ddb"  -- GUID for the central board
 local seatedColors = T{}
@@ -36,7 +38,7 @@ function init(savedData)
         log("Loading game state...")
         claimedFactionsByColor = data.claimedFactions
         RoundManager.init(data.roundData)
-        PhaseManager.load(data.phaseData)
+        PhaseManager.init(data.phaseData)
         createButtons()
     else
         log("Initializing for a new game...")
@@ -45,9 +47,11 @@ function init(savedData)
         Ships.init()
     end
 
+    CardAbilities.register()
     Resources.init()
     Planets.init()
     updateSeatedColors()
+    PhaseManager.onSelect = delegate_onSelectPhase
 end
 
 function startGame()
@@ -271,40 +275,39 @@ function selectRandomCommandShip(obj, playerColor)
     Resources.createPlayerResourceZone(playerColor)
 end
 
-function selectPhase(playerColor, phaseName)
+function delegate_onSelectPhase(playerColor, phaseName)
     local admiralColor = RoundManager.admiralColor()
     if not debug and admiralColor and playerColor ~= admiralColor then
         broadcastToColor("Only the Fleet Admiral (" .. admiralColor .. ") may select the phase.", playerColor, {1, 0.4, 0.4})
-        return
+        return false
     end
-    if PhaseManager.selectPhase(admiralColor, phaseName) then
+
         -- Remove phase buttons now that phase is locked
         removePhaseButtons(admiralColor)
         -- Create the advance Fleet Admiral button
         Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
-    else
-        broadcastToColor("Invalid phase choice: " .. phaseName, admiralColor, {1, 0.5, 0.5})
-    end
+
+    return true
 end
 
 function selectPhase_Income(_, playerColor)
-    selectPhase(playerColor, PhaseManager.getPhases()[1])
+    PhaseManager.selectPhase(playerColor, PhaseManager.getPhases()[1])
 end
 
 function selectPhase_Miners(_, playerColor)
-    selectPhase(playerColor, PhaseManager.getPhases()[2])
+    PhaseManager.selectPhase(playerColor, PhaseManager.getPhases()[2])
 end
 
 function selectPhase_Transporters(_, playerColor)
-    selectPhase(playerColor, PhaseManager.getPhases()[3])
+    PhaseManager.selectPhase(playerColor, PhaseManager.getPhases()[3])
 end
 
 function selectPhase_Builders(_, playerColor)
-    selectPhase(playerColor, PhaseManager.getPhases()[4])
+    PhaseManager.selectPhase(playerColor, PhaseManager.getPhases()[4])
 end
 
 function selectPhase_Explorers(_, playerColor)
-    selectPhase(playerColor, PhaseManager.getPhases()[5])
+    PhaseManager.selectPhase(playerColor, PhaseManager.getPhases()[5])
 end
 
 function updateSeatedColors()
@@ -340,12 +343,18 @@ function onPlayerChangeColor(color)
 end
 
 function onObjectLeaveContainer(container, obj)
-    if container.hasTag(Ships.ShipTag()) and obj.type == "Card"
-    or container.hasTag(Resources.ResourceTag()) and obj.type == "Block" then
+    if obj.type == "Card" and container.hasTag(Ships.ShipTag())
+    or obj.type == "Block" and container.hasTag(Resources.ResourceTag()) then
         -- This is a ship card being removed from a ship deck
         -- or resource block being removed from a resource bag.
         -- Copy container tags to the withdrawn object
         obj.setTags(container.getTags())
+    end
+end
+
+function onObjectSpawn(obj)
+    if obj.type == "Card" and obj.hasTag(Explorers.ExplorerTag()) then
+        CardAbilities.initCard(obj)
     end
 end
 
@@ -358,7 +367,16 @@ end
 
 function onObjectEnterZone(zone, obj)
     if obj.type ~= "Card"
-    or not obj.hasTag(Ships.ShipTag()) then
+    or (not obj.hasTag(Ships.ShipTag())
+        and not obj.hasTag(Explorers.ExplorerTag())
+    ) then
+        return
+    end
+
+    if zone.type == "Hand"
+    and obj.type == "Card"
+    and obj.hasTag(Explorers.ExplorerTag()) then
+        CardAbilities.initCard(obj)
         return
     end
 
