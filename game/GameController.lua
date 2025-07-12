@@ -28,30 +28,37 @@ function onSave()
     return JSON.encode({
         roundData = RoundManager.save(),
         claimedFactions = claimedFactionsByColor,
-        phaseData = PhaseManager.save()
+        phaseData = PhaseManager.save(),
+        resourcesData = Resources.save(),
+        shipData = Ships.save(),
     })
 end
 
 function init(savedData)
     local data = JSON.decode(savedData)
+    PhaseManager.onSelect = delegate_onSelectPhase
+    CardAbilities.register()
+
     if data then
         log("Loading game state...")
         claimedFactionsByColor = data.claimedFactions
         RoundManager.init(data.roundData)
         PhaseManager.init(data.phaseData)
+        Ships.init(data.shipData)
+        Resources.init(data.resourcesData)
+        if not RoundManager.isGameFinished() then
         createButtons()
+            CardAbilities.restore()
+        end
     else
         log("Initializing for a new game...")
         createPreGameButtons()
         RoundManager.init()
         Ships.init()
+        Resources.init()
     end
-
-    CardAbilities.register()
-    Resources.init()
     Planets.init()
     updateSeatedColors()
-    PhaseManager.onSelect = delegate_onSelectPhase
 end
 
 function startGame()
@@ -122,10 +129,16 @@ function cleanUp()
     -- Remove all buttons
     Utils.removeButton(centralBoardId, "advancePlanets")
     Utils.removeButton(RoundManager.fleetAdmiralCardId(), "advanceFleetAdmiral")
+    removePhaseButtons(RoundManager.admiralColor())
 end
 
 function createButtons()
     Utils.createButton(centralBoardId, btnConfig.advancePlanets)
+    if PhaseManager.isPhaseActive() then
+        Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
+    elseif RoundManager.admiralColor() then
+        createPhaseSelectionButtons(RoundManager.admiralColor())
+    end
 end
 
 function createPreGameButtons()

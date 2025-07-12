@@ -73,13 +73,42 @@ Ships.IsFactionAuctionZoneSnappingEnabled = function(value)
     return factionAuctionZoneSnappingEnabled
 end
 
-Ships.init = function()
+Ships.init = function(data)
     log("Initializing Ships module...")
     shipOffset[360] = shipOffset[0]  -- Add 360° rotation to ship offsets
 
+    if data then
+        log("Restoring ship zones from saved data...")
+        for color, zoneGUID in pairs(data.shipZones) do
+            local zone = getObjectFromGUID(zoneGUID)
+            if zone then
+                shipZones[color] = zone
+            else
+                log("WARNING: No ship zone for " .. color .. " was found during load.")
+            end
+        end
+
+        for i, zoneGUID in ipairs(data.neutralDeckZones) do
+            local zone = getObjectFromGUID(zoneGUID)
+            if zone then
+                neutralDeckZones[i] = zone
+            else
+                log("WARNING: No neutral deck zone at index " .. i .. " was found during load.")
+            end
+        end
+
+        for i, zoneGUID in ipairs(data.factionDeckZones) do
+            local zone = getObjectFromGUID(zoneGUID)
+            if zone then
+                factionDeckZones[i] = zone
+            else
+                log("WARNING: No faction deck zone at index " .. i .. " was found during load.")
+            end
+        end
+    else
     -- Tag loose Command Ships
-    for faction, data in pairs(factionData) do
-        for guid, ship in pairs(data.commandShips) do
+        for faction, fd in pairs(factionData) do
+            for guid, ship in pairs(fd.commandShips) do
             getObjectFromGUID(guid).setTags({TAG_SHIP, TAG_COMMAND})
         end
     end
@@ -91,6 +120,29 @@ Ships.init = function()
             deck.setTags({TAG_SHIP, tag})
         end
     end
+    end
+end
+
+Ships.save = function()
+    -- Save claimed factions
+    local savedShipZones = {}
+    for color, zone in pairs(shipZones) do
+        savedShipZones[color] = zone.getGUID()
+    end
+    local savedNeutralDeckZones = {}
+    for i, zone in ipairs(neutralDeckZones) do
+        savedNeutralDeckZones[i] = zone.getGUID()
+    end
+    local savedFactionDeckZones = {}
+    for i, zone in ipairs(factionDeckZones) do
+        savedFactionDeckZones[i] = zone.getGUID()
+    end
+
+    return {
+        shipZones = savedShipZones,
+        neutralDeckZones = savedNeutralDeckZones,
+        factionDeckZones = savedFactionDeckZones
+    }
 end
 
 local advanceAuctionZones = function(zones, numToDeal, callback)

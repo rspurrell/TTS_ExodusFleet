@@ -32,7 +32,7 @@ Resources.ResourceTag = function()
     return TAG_RESOURCE
 end
 
-Resources.init = function()
+Resources.init = function(data)
     log("Initializing Resources module...")
     -- Tag all resource bags
     for tag, bagId in pairs(resourceIDs) do
@@ -41,6 +41,26 @@ Resources.init = function()
             bag.setTags({TAG_RESOURCE, tag})
         end
     end
+    if data then
+        log("Restoring resource zones from saved data...")
+        for color, zoneGUID in pairs(data) do
+            local zone = getObjectFromGUID(zoneGUID)
+            if zone then
+                resourceZones[color] = zone
+            else
+                log("WARNING: No resource zone for " .. color .. " was found during load.")
+            end
+        end
+    end
+end
+
+Resources.save = function()
+    -- Save the state of all resource zones
+    local savedZones = {}
+    for color, zone in pairs(resourceZones) do
+        savedZones[color] = zone.getGUID()
+    end
+    return savedZones
 end
 
 Resources.dealXUToPlayer = function(playerColor, xuAmount)

@@ -51,6 +51,7 @@ RoundManager.init = function(roundData)
         currentRound = roundData.currentRound or currentRound
         admiralColor = roundData.admiralColor or admiralColor
         initialPlayerCount = roundData.initialPlayerCount or initialPlayerCount
+        finished = roundData.finished or finished
         maxRounds = roundData.maxRounds or maxRounds
         fleetAdmiralIndex = roundData.fleetAdmiralIndex or fleetAdmiralIndex
         firstPlayerColor = roundData.firstPlayerColor or firstPlayerColor
@@ -61,6 +62,7 @@ RoundManager.save = function()
     return {
         admiralColor = admiralColor,
         currentRound = currentRound,
+        finished = finished,
         initialPlayerCount = initialPlayerCount,
         maxRounds = maxRounds,
         fleetAdmiralIndex = fleetAdmiralIndex,

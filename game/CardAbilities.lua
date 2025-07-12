@@ -48,6 +48,22 @@ CardAbilities.initCard = function(card)
     end
 end
 
+CardAbilities.restore = function()
+    log("Restoring Card Abilities...")
+    -- Restore abilities for seated players
+    for _, hand in ipairs(Hands.getHands()) do
+        for _, obj in ipairs(hand.getObjects()) do
+            log(obj)
+            if obj and obj.type == "Card" and obj.getGUID then
+                local ability = abilityRegistry[obj.getGUID()]
+                if ability then
+                    CardAbilities.initCard(obj)
+                end
+            end
+        end
+    end
+end
+
 -- Dynamic click dispatcher (called by Global)
 function _G.onAbility_dispatch(guid, playerColor)
     local card = getObjectFromGUID(guid)
