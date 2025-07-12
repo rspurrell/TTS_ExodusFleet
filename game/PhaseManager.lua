@@ -12,7 +12,9 @@ local overridePhase = false
 local phaseActive = false
 
 -- event handler for phase selection
-PhaseManager.onSelect = nil
+PhaseManager.onSelecting = nil
+PhaseManager.onSelected = nil
+PhaseManager.onPostPhase = nil
 
 PhaseManager.getPhases = function()
     return phases
@@ -23,7 +25,11 @@ PhaseManager.getPreviousPhase = function()
     return prevPhase
 end
 
--- Validate if a phase choice is allowed
+PhaseManager.isPhaseActive = function()
+    return phaseActive
+end
+
+-- Validate the phase choice
 local function isPhaseAllowed(phaseName)
     if not phaseName then return false end
 
@@ -61,35 +67,55 @@ PhaseManager.selectPhase = function(playerColor, phaseName)
         return false
     end
 
-    if not PhaseManager.onSelect(playerColor, phaseName) then
+    if PhaseManager.onSelecting and not PhaseManager.onSelecting(playerColor, phaseName) then
         return false
     end
 
-    prevPhase = phaseName
     broadcastToAll((Player[playerColor].steam_name or playerColor) .. " selected " .. phaseName .. ".", playerColor)
+
     phaseActive = true
-    return true
+    local lastPhase = prevPhase
+    prevPhase = phaseName
+
+    local success = true
+    if PhaseManager.onSelected and not PhaseManager.onSelected(playerColor, phaseName) then
+        -- If onSelected returns false, we cancel the phase selection
+        phaseActive = false
+        prevPhase = lastPhase
+        success = false
+    end
+
+    if PhaseManager.onPostPhase then
+        -- Call post-phase resolution
+        PhaseManager.onPostPhase(success, phaseName, playerColor)
+    end
+
+    return success
 end
 
-PhaseManager.resolvePhaseEffects = function(phaseName)
+PhaseManager.resolvePhaseEffects = function(phaseName, phaseFunctions)
     if phaseName == PHASE_INCOME then
-        -- TODO: Trigger Income phase logic
-        broadcastToAll(PHASE_INCOME .. " Phase: Players collect XU based on their fleet income.", {0.9, 1, 0.9})
+        broadcastToAll(PHASE_INCOME .. " phase: Players collect XU based on their fleet income.", {0.9, 1, 0.9})
+        if phaseFunctions and phaseFunctions.income then
+            log("Resolving income phase effects.")
+            return phaseFunctions.income()
+        end
     elseif phaseName == PHASE_MINERS then
         -- TODO: Trigger Miners phase logic
-        broadcastToAll(PHASE_MINERS .." Phase: Mining ships produce resources. ", {0.9, 0.9, 1})
+        broadcastToAll(PHASE_MINERS .. " phase: Mining ships produce resources. ", {0.9, 0.9, 1})
     elseif phaseName == PHASE_TRANSPORTERS then
         -- TODO: Trigger Transporters phase logic
-        broadcastToAll(PHASE_TRANSPORTERS .. " Phase: Players move resources between ships and warehouse.", {0.9, 0.9, 1})
+        broadcastToAll(PHASE_TRANSPORTERS .. " phase: Players move resources between ships and warehouse.", {0.9, 0.9, 1})
     elseif phaseName == PHASE_BUILDERS then
         -- TODO: Trigger Builders phase logic
-        broadcastToAll(PHASE_BUILDERS .. " Phase: Players may construct ships.", {1, 0.8, 0.8})
+        broadcastToAll(PHASE_BUILDERS .. " phase: Players may construct ships.", {1, 0.8, 0.8})
     elseif phaseName == PHASE_EXPLORERS then
         -- TODO: Trigger Explorers phase logic
-        broadcastToAll(PHASE_EXPLORERS .. " Phase: Players draw explorer cards.", {1, 0.9, 0.6})
+        broadcastToAll(PHASE_EXPLORERS .. " phase: Players draw explorer cards.", {1, 0.9, 0.6})
     else
         print("PhaseManager: Unknown phase effect for '" .. tostring(phaseName) .. "'")
     end
+    return true
 end
 
 PhaseManager.resolvePostPhaseEffects = function(postPhaseFunctions)
@@ -123,6 +149,7 @@ PhaseManager.init = function(data)
     if not data then
         return
     end
+    log("Restoring phase data from saved data...")
     prevPhase = data.prevPhase
     phaseActive = data.phaseActive or false
 end

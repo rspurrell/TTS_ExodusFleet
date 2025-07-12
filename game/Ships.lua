@@ -1,6 +1,7 @@
 local Ships = {}
 
 local factionData = require("game.FactionData")
+local ShipData = require("game.ShipData")
 local Utils = require("lib.Utils")
 local Resources = require("game.ResourceData")
 
@@ -41,7 +42,7 @@ local shipOffset = { -- offset corrections for 0.52 grid
 local neutralAuctionZoneSnappingEnabled = true  -- Enable snapping to grid for neutral auction zones
 local factionAuctionZoneSnappingEnabled = true  -- Enable snapping to grid for faction auction zones
 local claimedFactions = {}
-local shipZones = {}  -- Maps player color to ship scripting trigger zone
+local fleetZones = {}  -- Maps player color to ship scripting trigger zone
 local neutralDeckZones = {}  -- Maps deck tag to neutral ship deck zone
 local factionDeckZones = {}  -- Maps deck tag to faction ship deck zone
 
@@ -79,10 +80,10 @@ Ships.init = function(data)
 
     if data then
         log("Restoring ship zones from saved data...")
-        for color, zoneGUID in pairs(data.shipZones) do
+        for color, zoneGUID in pairs(data.fleetZones) do
             local zone = getObjectFromGUID(zoneGUID)
             if zone then
-                shipZones[color] = zone
+                fleetZones[color] = zone
             else
                 log("WARNING: No ship zone for " .. color .. " was found during load.")
             end
@@ -125,9 +126,9 @@ end
 
 Ships.save = function()
     -- Save claimed factions
-    local savedShipZones = {}
-    for color, zone in pairs(shipZones) do
-        savedShipZones[color] = zone.getGUID()
+    local savedfleetZones = {}
+    for color, zone in pairs(fleetZones) do
+        savedfleetZones[color] = zone.getGUID()
     end
     local savedNeutralDeckZones = {}
     for i, zone in ipairs(neutralDeckZones) do
@@ -139,7 +140,7 @@ Ships.save = function()
     end
 
     return {
-        shipZones = savedShipZones,
+        fleetZones = savedfleetZones,
         neutralDeckZones = savedNeutralDeckZones,
         factionDeckZones = savedFactionDeckZones
     }
@@ -197,7 +198,46 @@ local createPlayerFleetZone = function(color)
     zone.setVar("zoneColor", color)
     zone.setTags({TAG_SHIP, TAG_FLEET})
     zone.interactable = false
-    shipZones[color] = zone
+    fleetZones[color] = zone
+end
+
+Ships.getFleetData = function()
+    local fleetData = {}
+    local seenShips = {}  -- Track ships we've already found
+
+    for playerColor, fleetZone in pairs(fleetZones) do
+        fleetData[playerColor] = {}
+
+        -- Get all objects in the fleet zone
+        for _, obj in ipairs(fleetZone.getObjects()) do
+            if obj.tag == "Card" and obj.hasTag(TAG_SHIP) then
+                local shipGUID = obj.getGUID()
+                local shipName = obj.getName()
+                local seenKey = shipName or shipGUID
+
+                -- Check if this ship is already in another fleet
+                local seenShip = seenShips[seenKey]
+                if seenShip then
+                    broadcastToAll("Ship [" .. seenKey .. "] found in multiple fleet zones: " .. (Player[seenShip].steam_name or seenShip) .. " and " .. (Player[playerColor].steam_name or playerColor), "Red")
+                    fleetData = nil  -- Reset fleet data if conflict found
+                    return false, fleetData
+                end
+
+                -- Mark this ship as seen in this player's fleet
+                seenShips[seenKey] = playerColor
+
+                local shipInfo = ShipData[shipGUID]
+                if shipInfo then
+                    table.insert(fleetData[playerColor], {
+                        guid = shipGUID,
+                        object = obj,
+                        data = shipInfo
+                    })
+                end
+            end
+        end
+    end
+    return true, fleetData
 end
 
 local createShipAuctionZones = function(origin, direction, distance, playerCount)

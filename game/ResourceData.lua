@@ -2,6 +2,8 @@ local Resources = {}
 
 local xuDenominations = {10, 5, 3, 1}
 
+local ADMIRAL_BONUS = 3
+
 local xuIDs = {
     ["1"] = "4e7b3a",
     ["3"] = "95a6bf",
@@ -30,6 +32,10 @@ local resourceZones = {}
 
 Resources.ResourceTag = function()
     return TAG_RESOURCE
+end
+
+Resources.AdmiralBonus = function()
+    return ADMIRAL_BONUS
 end
 
 Resources.init = function(data)

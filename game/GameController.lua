@@ -1,7 +1,7 @@
 local Utils = require("lib.Utils")
 local Resources = require("game.ResourceData")
-local btnConfig = require("game.Config").ButtonConfig
-local factionData = require("game.FactionData")
+local BtnConfig = require("game.Config").ButtonConfig
+local FactionData = require("game.FactionData")
 local Planets = require("game.Planets")
 local PhaseManager = require("game.PhaseManager")
 local RoundManager = require("game.RoundManager")
@@ -36,7 +36,9 @@ end
 
 function init(savedData)
     local data = JSON.decode(savedData)
-    PhaseManager.onSelect = delegate_onSelectPhase
+    PhaseManager.onSelecting = delegate_onSelectingPhase
+    PhaseManager.onSelected = delegate_onSelectedPhase
+    PhaseManager.onPostPhase = delegate_onPostPhase
     CardAbilities.register()
 
     if data then
@@ -102,14 +104,12 @@ function startGame()
     local firstPlayer = RoundManager.assignFirstPlayer(seatedColors)
     broadcastToAll((firstPlayer.steam_name or "test") .. " (" .. firstPlayer.color .. ") is the first player!", {1, 1, 0})
 
-    createButtons()
-
     -- Cleanup unclaimed faction assets
     Ships.removeUnclaimedFactions()
     broadcastToAll("Unused boards, command ships, and explorers have been removed.", {0.6, 0.9, 1})
 
     removePreGameButtons()
-    createPhaseSelectionButtons(firstPlayer.color)
+    createButtons()
 end
 
 function debugStart()
@@ -133,20 +133,20 @@ function cleanUp()
 end
 
 function createButtons()
-    Utils.createButton(centralBoardId, btnConfig.advancePlanets)
+    Utils.createButton(centralBoardId, BtnConfig.advancePlanets)
     if PhaseManager.isPhaseActive() then
-        Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
+        Utils.createButton(RoundManager.fleetAdmiralCardId(), BtnConfig.advanceFleetAdmiral)
     elseif RoundManager.admiralColor() then
         createPhaseSelectionButtons(RoundManager.admiralColor())
     end
 end
 
 function createPreGameButtons()
-    Utils.createButton(centralBoardId, btnConfig.startGame)
-    Utils.createButton(centralBoardId, btnConfig.selectRandomCommandShip)
-    for faction, data in pairs(factionData) do
+    Utils.createButton(centralBoardId, BtnConfig.startGame)
+    Utils.createButton(centralBoardId, BtnConfig.selectRandomCommandShip)
+    for faction, data in pairs(FactionData) do
         for guid, ship in pairs(data.commandShips) do
-            local cfg = btnConfig.selectCommandShip
+            local cfg = BtnConfig.selectCommandShip
             cfg.tooltip = "Choose " .. ship.name .. " for The " .. faction
             Utils.createButton(guid, cfg)
         end
@@ -171,7 +171,7 @@ function createPhaseSelectionButtons(playerColor)
 
     local phases = PhaseManager.getPhases()
     local prevPhase = PhaseManager.getPreviousPhase()
-    local btn = btnConfig.SelectPhase
+    local btn = BtnConfig.SelectPhase
     local btnPos = btn.position
     local btnXOffset = 0.805
     local btnIndex = 0
@@ -288,19 +288,70 @@ function selectRandomCommandShip(obj, playerColor)
     Resources.createPlayerResourceZone(playerColor)
 end
 
-function delegate_onSelectPhase(playerColor, phaseName)
+function delegate_onSelectingPhase(playerColor, phaseName)
     local admiralColor = RoundManager.admiralColor()
     if not debug and admiralColor and playerColor ~= admiralColor then
         broadcastToColor("Only the Fleet Admiral (" .. admiralColor .. ") may select the phase.", playerColor, {1, 0.4, 0.4})
         return false
     end
+    return true
+    end
 
+function delegate_onSelectedPhase(playerColor, phaseName)
+    local admiralColor = RoundManager.admiralColor()
         -- Remove phase buttons now that phase is locked
         removePhaseButtons(admiralColor)
+
+    local phaseFunctions = {
+        income = function()
+            local success, fleetData = Ships.getFleetData()
+            if not success then
+                log("Failed to get fleet data for income phase.")
+                return false
+            end
+
+            for playerColor, fleetData in pairs(fleetData) do
+                local totalXU = 0
+
+                for _, shipInfo in ipairs(fleetData) do
+                    if shipInfo.data.xu then
+                        totalXU = totalXU + shipInfo.data.xu
+                    end
+                end
+
+                local isAdmiral = playerColor == admiralColor
+                if isAdmiral then
+                    totalXU = totalXU + Resources.AdmiralBonus()
+                end
+
+                if totalXU > 0 then
+                    printToAll("Dealing " .. totalXU .. " XU to " .. (Player[playerColor].steam_name or playerColor) .. (isAdmiral and " (Admiral)" or ""), playerColor)
+                    Resources.dealXUToPlayer(playerColor, totalXU)
+                elseif totalXU < 0 then
+                    -- Handle negative XU if needed
+                    printToAll("Player " .. (Player[playerColor].steam_name or playerColor) .. " has negative XU: " .. totalXU, playerColor)
+                end
+            end
+            return true
+        end
+    }
+
+    if not PhaseManager.resolvePhaseEffects(phaseName, phaseFunctions) then
+        return false
+    end
+
         -- Create the advance Fleet Admiral button
-        Utils.createButton(RoundManager.fleetAdmiralCardId(), btnConfig.advanceFleetAdmiral)
+    Utils.createButton(RoundManager.fleetAdmiralCardId(), BtnConfig.advanceFleetAdmiral)
 
     return true
+end
+
+function delegate_onPostPhase(success, phaseName, playerColor)
+    if not success then
+        -- restore the phase buttons to the admiral if the phase failed
+        createPhaseSelectionButtons(RoundManager.admiralColor())
+        return
+    end
 end
 
 function selectPhase_Income(_, playerColor)
@@ -339,7 +390,7 @@ end
 
 function updatePlayerBoardStates(playerCount)
     local state = Utils.clamp(playerCount, 2, 5) - 1  -- convert 2–5 players to state 1–4
-    for faction, data in pairs(factionData) do
+    for faction, data in pairs(FactionData) do
         local board = getObjectFromGUID(data.playerBoard)
         if board then
             local currentState = board.getStateId()
